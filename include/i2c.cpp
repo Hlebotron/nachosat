@@ -24,10 +24,13 @@ float bmp_read_press()
 	{
 	case I2C_ERR_NACK_ADDR_TRANSMIT:
 	    Serial.println( "Error: Received NACK on transmit of address" );
+	    break;
 	case I2C_ERR_NACK_DATA_TRANSMIT:
 	    Serial.println( "Error: Received NACK on transmit of data" );
+	    break;
 	case I2C_ERR_LINE_BUSY:
 	    Serial.println( "Error: Line busy" );
+	    break;
 	}
 	return ( err * (-1.0) );
     }
