@@ -16,11 +16,15 @@
 // }
 #include <Wire.h>
 #include <SPI.h>
-#include <Adafruit_BMP280.h>
+#include <Adafruit_BMP280.cpp>
 
-Adafruit_BMP280 bmp = Adafruit_BMP280( 18, 17, 19, 16 ); // SPI interface: SS, MOSI, MISO, SCK
-Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
-Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
+#include "spi.h"
+
+
+SPIClass spi; // SPI object, use this with other libraries
+Adafruit_BMP280 bmp = Adafruit_BMP280( BMP_SS, &spi ); //Such as this one
+Adafruit_Sensor* bmp_temp = bmp.getTemperatureSensor();
+Adafruit_Sensor* bmp_pressure = bmp.getPressureSensor();
 
 void setup() {
   Serial.begin(9600);
@@ -57,6 +61,7 @@ void loop() {
   bmp_pressure->getEvent(&pressure_event);
   
   Serial.print(F("Temperature = "));
+  //TODO: Determine how to do reads with interrupts (if it isn't done so already)
   Serial.print(temp_event.temperature);
   Serial.println(" *C");
 
