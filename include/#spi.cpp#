@@ -3,6 +3,8 @@
 
 #include "spi.h"
 
+extern 
+
 int read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, struct BMPData& data )
 {
     if( bmp_temp == NULL ) return 1;

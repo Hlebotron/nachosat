@@ -1,13 +1,14 @@
+#define MS / portTICK_PERIOD_MS
+#define QUEUE_LEN 64
+
 enum I2CDataSource
 {
-    I2C_BMP,
-    I2C_BMP_TEMP,
-    I2C_BMP_PRESS,
     I2C_ACCEL,
     I2C_GPS
 };
 enum SpiDataSource
 {
+    SPI_BMP,
     SPI_RADIO,
     SPI_ORIENT
 };
@@ -15,31 +16,78 @@ enum ChuteDataSource
 {
     CHUTE_BMP,
     CHUTE_GPS,
-    CHUTE_ORIENT
+    CHUTE_MAGNET,
+    CHUTE_GYRO
+};
+enum CmdOpcode
+{
+    CMD_MOVE_MOTOR,
+    
+};
+struct RadioCmd
+{
+    enum CmdOpcode opcode;
+};
+
+union RadioDataSource
+{
+    enum I2CDataSource i2c;
+    enum SpiDataSource spi;
+    struct RadioCmd cmd;
+};
+enum DataDest
+{
+    DEST_I2C,
+    DEST_CHUTE,
+    DEST_SPI,
+    DEST_UART
+};
+struct SpiDataRequest
+{
+    enum DataDest dest;
+    enum SpiDataSource type;
+};
+struct I2CDataRequest
+{
+    enum DataDest dest;
+    enum I2CDataSource type;
+};
+struct ChuteDataRequest
+{
+    enum DataDest dest;
+    enum ChuteDataSource type;
 };
 
 struct GPSData		{ float x, y; };
 struct AccelData	{ float x, y, z; };
-struct OrientData	{ float orient; };
-struct RadioData	{};
+struct MagnetData	{ float orient; };
+struct SDData		{};
 struct BMPData		{ float temp, pressure; };
+
+//If dest == DEST_UART, then interpret request as command
+struct RadioRequest
+{
+    enum DataDest dest;
+    union RadioDataSource;
+};
+struct RadioResponse	{};
 
 union SpiDataContent
 {
-    struct GPSData gps;
-    struct RadioData radio;
-    struct OrientData orient;
+    struct BMPData bmp;
+    struct
 };
 union I2CDataContent
 {
-    float bmp;
     struct AccelData accel;
+    struct MagnetData magnet;
 };
 union ChuteDataContent
 {
-    float press;
+    struct BMPData bmp;
     struct GPSData gps;
-    struct OrientData orient;
+    struct MagnetData magnet;
+    struct GyroData gyro;
 };
 
 struct SpiData

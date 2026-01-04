@@ -1,0 +1,17 @@
+/*!
+ *@brief 
+ */
+//TODO: Implement ACK/NACK system
+int read_radio( struct RadioData& data );
+int write_radio( const struct RadioData& data );
+
+#define COMMS_UART_RX 16
+#define COMMS_UART_TX 17
+
+#ifdef GROUND
+
+#else
+
+void UartTask( void* params );
+
+#endif

@@ -25,8 +25,9 @@ enum i2c_error
 
 float bmp_read_temp();
 float bmp_read_press();
-int gps_read( struct GPSData* data );
-int orient_read( struct OrientData* data );
-int accel_read( struct AccelData* data );
+int gps_read( struct GPSData& data );
+int magnet_read( struct MagnetData& data );
+int accel_read( struct AccelData& data );
+
 
 void I2CTask( void* params );
