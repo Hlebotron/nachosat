@@ -1,24 +1,26 @@
 #include <HardwareSerial.h>
 
-extern QueueHandle_t spi_drq = xQueueCreate( 32, sizeof(SpiDataRequest) );
-extern QueueHandle_t i2c_drq = xQueueCreate( 32, sizeof(I2CDataRequest) );
-extern QueueHandle_t chute_drq = xQueueCreate( 32, sizeof(ChuteDataRequest) );
-extern QueueHandle_t uart_out_queue = xQueueCreate( 32, sizeof(RadioData) );
 
-#include "main.h"
+
+// #include "main.h"
 #include "i2c.cpp"
 #include "spi.cpp"
 #include "chute.cpp"
 #include "data_clock.cpp"
 #include "uart.cpp"
 
-void vApplicationIdleHook()
-{
-    for( ;; )
-    {
+QueueHandle_t spi_drq = xQueueCreate( 32, sizeof(SpiDataRequest) );
+QueueHandle_t i2c_drq = xQueueCreate( 32, sizeof(I2CDataRequest) );
+QueueHandle_t chute_drq = xQueueCreate( 32, sizeof(ChuteDataRequest) );
+QueueHandle_t uart_out_queue = xQueueCreate( 32, sizeof(RadioData) );
 
-    }
-}
+// void IdleHook()
+// {
+//     for( ;; )
+//     {
+
+//     }
+// }
 
 void setup()
 {

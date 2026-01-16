@@ -1,5 +1,7 @@
 #include "chute.h"
 
+extern QueueHandle_t chute_drq;
+
 void ParachuteTask( void* params )
 {
     //Deploy parachute

@@ -1,5 +1,5 @@
-#define MS / portTICK_PERIOD_MS
-#define QUEUE_LEN 64
+#define MS		/ portTICK_PERIOD_MS
+#define QUEUE_LEN 	64
 
 enum I2CDataSource
 {
@@ -19,21 +19,23 @@ enum ChuteDataSource
     CHUTE_MAGNET,
     CHUTE_GYRO
 };
-enum CmdOpcode
-{
-    CMD_MOVE_MOTOR,
-    
-};
-struct RadioCmd
-{
-    enum CmdOpcode opcode;
-};
+/* enum CmdOpcode */
+/* { */
+/*     CMD_MOVE_MOTOR, */
+/*     CMD_GET_STATUS */
+/* }; */
+/* struct RadioCmd */
+/* { */
+/*     int32_t arg; */
+/*     enum CmdOpcode opcode; */
+
+/* }; */
 
 union RadioDataSource
 {
     enum I2CDataSource i2c;
     enum SpiDataSource spi;
-    struct RadioCmd cmd;
+    /* struct RadioCmd cmd; */
 };
 enum DataDest
 {
@@ -63,19 +65,20 @@ struct AccelData	{ float x, y, z; };
 struct MagnetData	{ float orient; };
 struct SDData		{};
 struct BMPData		{ float temp, pressure; };
+struct GyroData		{};
 
 //If dest == DEST_UART, then interpret request as command
 struct RadioRequest
 {
     enum DataDest dest;
-    union RadioDataSource;
+    union RadioDataSource source;
 };
 struct RadioResponse	{};
 
 union SpiDataContent
 {
     struct BMPData bmp;
-    struct
+    /* struct  */
 };
 union I2CDataContent
 {

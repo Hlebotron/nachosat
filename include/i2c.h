@@ -8,12 +8,10 @@
 #define BMP_MAX_RES_PRESS	( 0.16 )
 #define BMP_RES_BITS		( 16 )
 
-#define I2C_SCL			( 22 )
-#define I2C_SDA			( 23 )
+#define I2C_SCL			( 33 )
+#define I2C_SDA			( 36 )
 #define I2C_BMP_ADDR		( 0x76 )
-#define I2C_GPS_ADDR		( NULL )
-#define I2C_ACCEL_ADDR		( NULL )
-#define I2C_ORIENT_ADDR		( NULL )
+#define I2C_GYRO_ADDR		( 0x1E )
 
 enum i2c_error
 {

@@ -3,10 +3,14 @@
 
 #include "spi.h"
 
-int read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, struct BMPData& data )
+extern QueueHandle_t spi_drq;
+
+int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, struct BMPData& data )
 {
-    if( bmp_temp == NULL ) return 1;
-    if( bmp_pressure == NULL ) return 2;
+    if( bmp_temp == NULL )
+	return 1;
+    if( bmp_pressure == NULL )
+	return 2;
     
     sensors_event_t temp_event, pressure_event;
     
@@ -55,7 +59,7 @@ void SpiTask( void* params )
 
     BMPData data = { -500.0, -500.0 };
     for( ;; ) {
-	int read_status = read_bmp( bmp_temp, bmp_press, data );
+	int32_t read_status = read_bmp( bmp_temp, bmp_press, data );
 	switch ( read_status )
 	{
 	case 1:

@@ -2,6 +2,14 @@
 #include <Wire.h>
 #include "i2c.h"
 
+extern SemaphoreHandle_t received_queue;
+extern QueueHandle_t i2c_drq;
+
+void received_isr()
+{
+    xSemaphoreGiveFromISR( received_queue, NULL );
+}
+
 // float bmp_read_press()
 // {
 //     Serial.println( "Reading pressure" );
@@ -109,9 +117,13 @@
 
 void I2CTask( void* params )
 {
-    TickType_t prev_wake = xTaskGetTickCount();
+    // TickType_t prev_wake = xTaskGetTickCount();
+
+    Wire.begin();
+    
     for( ;; )
     {
-	vTaskDelayUntil( &prev_wake, 500 MS );
+	xSemaphoreTake( received_queue, portMAX_DELAY );
+	Wire.beginTransmission(  );
     }
 }
