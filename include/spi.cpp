@@ -74,5 +74,6 @@ void SpiTask( void* params )
 	Serial.println( data.temp );
 	Serial.print( "Pressure: " );
 	Serial.println( data.pressure );
+	delay( 200 MS );
     }
 }

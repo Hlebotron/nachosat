@@ -1,7 +1,3 @@
-#define UART_BAUD 	( 115200 )
-#define COMMS_UART_RX 	( 16 )
-#define COMMS_UART_TX 	( 17 )
-
 #ifdef GROUND
 
 #else

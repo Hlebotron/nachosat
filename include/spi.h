@@ -1,9 +1,3 @@
-#define MISO 	19 //BMP: SDO/SDD
-#define MOSI 	23 //BMP: SDA
-#define SCK 	18 //BMP: SCL
-#define BMP_SS 	15 //BMP: CSB
-#define SD_SS	16 
-
 /*!
  * @brief  		Read the data of the BMP280 and write it to the parameter "data"
  * @param bmp_temp	The sensor object used to read the temperature

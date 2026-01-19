@@ -1,5 +1,4 @@
 #include "uart.h"
-#include "main.h"
 
 extern QueueHandle_t uart_out_queue;
 
