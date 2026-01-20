@@ -34,7 +34,7 @@ void SpiTask( void* params )
       	13 (MOSI)
       	15 (SS)
     */
-    Adafruit_BMP280 bmp = Adafruit_BMP280( BMP_SS, MOSI, MISO, SCK );
+    Adafruit_BMP280 bmp = Adafruit_BMP280( SPI_BMP_SS, SPI_MOSI, SPI_MISO, SPI_SCK );
     unsigned status = bmp.begin();
     if( !status )
     {

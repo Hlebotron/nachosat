@@ -117,22 +117,22 @@ struct ChuteData
 #define BMP_MIN_RES_TEMP		( 0.0050f )
 #define BMP_MAX_RES_PRESS		( 0.16f )
 
-#define HMC_FREQ_REG_ADDR		( 0x00 )
-#define HMC_GAIN_REG_ADDR		( 0x01 )
-#define HMC_MODE_REG_ADDR		( 0x02 )
+#define QMC_FREQ_REG_ADDR		( 0x00 )
+#define QMC_GAIN_REG_ADDR		( 0x01 )
+#define QMC_MODE_REG_ADDR		( 0x02 )
 
-#define HMC_FREQ_REG_VALUE		( 0x70 )
-#define HMC_GAIN_REG_VALUE		( 0xA0 )
-#ifdef HMC_SINGLE_READ
-#define HMC_MODE_REG_VALUE		( 0x01 )
+#define QMC_FREQ_REG_VALUE		( 0x70 )
+#define QMC_GAIN_REG_VALUE		( 0xA0 )
+#ifdef QMC_SINGLE_READ
+#define QMC_MODE_REG_VALUE		( 0x01 )
 #else
-#define HMC_MODE_REG_VALUE		( 0x00 )
+#define QMC_MODE_REG_VALUE		( 0x00 )
 #endif
-/* #define HMC_ */
+/* #define QMC_ */
 
 #define I2C_BMP_ADDR			( 0x76 )
-#define I2C_BMI_ADDR			( 0x68 )
-#define I2C_HMC_ADDR			( 0x2C )
+#define I2C_BMI_ADDR			( 0x69 )
+#define I2C_QMC_ADDR			( 0x2C )
 
 #define MS				/ portTICK_PERIOD_MS
 
@@ -142,23 +142,23 @@ typedef struct {
     int16_t z;
 } hmc5883l_data_t;
 
-/* #ifndef HMC5883L_H */
-/* #define HMC5883L_H */
+/* #ifndef QMC5883L_H */
+/* #define QMC5883L_H */
 
 /* #include <stdint.h> */
 /* #include <stdbool.h> */
 
 /* // I2C address */
-/* #define HMC5883L_ADDR 0x1E */
+/* #define QMC5883L_ADDR 0x1E */
 
 /* // Registers */
-/* #define HMC5883L_REG_CONFIG_A   0x00 */
-/* #define HMC5883L_REG_CONFIG_B   0x01 */
-/* #define HMC5883L_REG_MODE       0x02 */
-/* #define HMC5883L_REG_DATA_X_MSB 0x03 */
+/* #define QMC5883L_REG_CONFIG_A   0x00 */
+/* #define QMC5883L_REG_CONFIG_B   0x01 */
+/* #define QMC5883L_REG_MODE       0x02 */
+/* #define QMC5883L_REG_DATA_X_MSB 0x03 */
 
 /* // Modes */
-/* #define HMC5883L_MODE_CONTINUOUS 0x00 */
+/* #define QMC5883L_MODE_CONTINUOUS 0x00 */
 
 /* typedef struct { */
 /*     int16_t x; */

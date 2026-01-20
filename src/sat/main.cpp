@@ -1,4 +1,5 @@
 #include <HardwareSerial.h>
+#include <qmc5883p.h>
 #include "config.h"
 #include "definitions.h"
 

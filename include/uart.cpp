@@ -14,7 +14,7 @@ void UartTask( void* params )
     // attachInterrupt( 35,  );
     HardwareSerial radio_uart( 1 );
 
-    radio_uart.begin( UART_BAUD, SERIAL_8N1, COMMS_UART_RX, COMMS_UART_TX );
+    radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
     *(BaseType_t*) params = 3;
     String str;
     BaseType_t str_len = 0;

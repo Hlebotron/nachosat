@@ -126,17 +126,17 @@ extern QueueHandle_t i2c_drq;
 // }
 
 // static bool i2c_write(uint8_t reg, uint8_t val) {
-//     Wire.beginTransmission(HMC5883L_ADDR);
+//     Wire.beginTransmission(QMC5883L_ADDR);
 //     Wire.write(reg);
 //     Wire.write(val);
 //     return Wire.endTransmission() == 0;
 // }
 
 // static bool i2c_read(uint8_t reg, uint8_t *buf, uint8_t len) {
-//     Wire.beginTransmission(HMC5883L_ADDR);
+//     Wire.beginTransmission(QMC5883L_ADDR);
 //     Wire.write(reg);
 //     if (Wire.endTransmission(false) != 0) return false;
-//     Wire.requestFrom(HMC5883L_ADDR, len);
+//     Wire.requestFrom(QMC5883L_ADDR, len);
 //     for (uint8_t i = 0; i < len; i++) {
 //         if (!Wire.available()) return false;
 //         buf[i] = Wire.read();
@@ -146,13 +146,13 @@ extern QueueHandle_t i2c_drq;
 
 // bool hmc5883l_init() {
 //     // Config A: 8-sample avg, 15 Hz output, normal measurement
-//     if (!i2c_write(HMC5883L_REG_CONFIG_A, 0x70)) return false;
+//     if (!i2c_write(QMC5883L_REG_CONFIG_A, 0x70)) return false;
 
 //     // Config B: Gain = 1.3 Ga (default)
-//     if (!i2c_write(HMC5883L_REG_CONFIG_B, 0x20)) return false;
+//     if (!i2c_write(QMC5883L_REG_CONFIG_B, 0x20)) return false;
 
 //     // Continuous measurement mode
-//     if (!i2c_write(HMC5883L_REG_MODE, HMC5883L_MODE_CONTINUOUS)) return false;
+//     if (!i2c_write(QMC5883L_REG_MODE, QMC5883L_MODE_CONTINUOUS)) return false;
 
 //     data_ready = false;
 //     return true;
@@ -162,7 +162,7 @@ extern QueueHandle_t i2c_drq;
 //     if (!data_ready) return false;
 
 //     uint8_t buf[6];
-//     if (!i2c_read(HMC5883L_REG_DATA_X_MSB, buf, 6)) return false;
+//     if (!i2c_read(QMC5883L_REG_DATA_X_MSB, buf, 6)) return false;
 
 //     out->x = (int16_t)((buf[0] << 8) | buf[1]);
 //     out->z = (int16_t)((buf[2] << 8) | buf[3]);
@@ -201,75 +201,102 @@ extern QueueHandle_t i2c_drq;
 // 	}
 //     }
 // }
-void bmi160_write( uint8_t reg, uint8_t data )
+int bmi160_write( uint8_t reg, uint8_t data )
 {
     Wire.beginTransmission( I2C_BMI_ADDR );
-    Wire.write( reg );
-    Wire.write( data );
-    Wire.endTransmission();
+    if( !Wire.write( reg ) ) return -1;
+    if( !Wire.write( data ) ) return -1;
+    return Wire.endTransmission();
 }
 
-uint8_t bmi160_read8( uint8_t reg )
+int bmi160_read8( uint8_t reg, uint8_t& out )
 {
     Wire.beginTransmission( I2C_BMI_ADDR );
-    Wire.write( reg );
-    Wire.endTransmission( false );
-    Wire.requestFrom( I2C_BMI_ADDR, 1 );
-    return Wire.read();
+    if( Wire.write( reg ) == 0 ) return -1;
+    int res = Wire.endTransmission( false );
+    if( res != 0 ) return res;
+    if( Wire.requestFrom( I2C_BMI_ADDR, 1 ) == 0 ) return -2;
+    out = Wire.read();
+    return 0;
 }
 
-int16_t bmi160_read16(uint8_t reg)
+int bmi160_read16( uint8_t reg, int16_t& out )
 {
-    uint8_t lsb = bmi160_read8(reg);
-    uint8_t msb = bmi160_read8(reg + 1);
-    return (int16_t)((msb << 8) | lsb);
+    uint8_t lsb, msb;
+    int res = bmi160_read8( reg, lsb );
+    if( res != 0 ) return res;
+    res = bmi160_read8( reg + 1, msb );
+    if( res != 0 ) return res;
+    out = ( int16_t )( (msb << 8) | lsb );
+    return 0;
 }
 
 /* =========================
    BMI INIT
    /   ========================= */
 
-bool bmi160_init()
+int bmi160_init()
 {
-    uint8_t id = bmi160_read8( BMI_CHIP_ID );
-    if ( id != 0xD1 )
-	return false;
+    uint8_t id;
+    int res = bmi160_read8( BMI_CHIP_ID, id );
+    if( res != 0 ) return res;
+    if ( id != 0xD1 ) return -3;
 
     // Accelerometer normal mode
-    bmi160_write(BMI_CMD, 0x11);
+    res = bmi160_write(BMI_CMD, 0x11);
+    if( res != 0 ) return res;
     delay(50);
 
     // Gyroscope normal mode
-    bmi160_write(BMI_CMD, 0x15);
+    res = bmi160_write(BMI_CMD, 0x15);
+    if( res != 0 ) return res;
     delay(50);
 
     // ACC: 100 Hz, normal BW
-    bmi160_write(BMI_ACC_CONF, 0x28);
+    res = bmi160_write(BMI_ACC_CONF, 0x28);
+    if( res != 0 ) return res;
 
     // ACC: ±2g
-    bmi160_write(BMI_ACC_RANGE, 0x03);
+    res = bmi160_write(BMI_ACC_RANGE, 0x03);
+    if( res != 0 ) return res;
 
     // GYRO: 100 Hz
-    bmi160_write(BMI_GYR_CONF, 0x28);
+    res = bmi160_write(BMI_GYR_CONF, 0x28);
+    if( res != 0 ) return res;
 
     // GYRO: ±2000 dps
-    bmi160_write(BMI_GYR_RANGE, 0x00);
+    res = bmi160_write(BMI_GYR_RANGE, 0x00);
+    if( res != 0 ) return res;
 
     return true;
 }
 
 int read_bmi160( AccelData& accel )
 {
-    float ax_g = bmi160_read16(BMI_ACC_X_L) / 16384.0f;
-    float ay_g = bmi160_read16(BMI_ACC_X_L + 2) / 16384.0f;
-    float az_g = bmi160_read16(BMI_ACC_X_L + 4) / 16384.0f;
+    int16_t ax, ay, az, gx, gy, gz;
+    int res = bmi160_read16( BMI_ACC_X_L, ax );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_ACC_X_L + 2, ay );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_ACC_X_L + 4, az );
+    if( res != 0 ) return res;
+    float ax_g = ax / 16384.0f;
+    float ay_g = ay / 16384.0f;
+    float az_g = az / 16384.0f;
 
-    float gx_dps = bmi160_read16(BMI_GYR_X_L) / 16.4f;
-    float gy_dps = bmi160_read16(BMI_GYR_X_L + 2) / 16.4f;
-    float gz_dps = bmi160_read16(BMI_GYR_X_L + 4) / 16.4f;
+    
+    res = bmi160_read16( BMI_GYR_X_L, gx );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_GYR_X_L + 2, gy );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_GYR_X_L + 4, gz );
+    if( res != 0 ) return res;
+    float gx_dps = gx / 16.4f;
+    float gy_dps = gy / 16.4f;
+    float gz_dps = gz / 16.4f;
 
-    float roll  = atan2(ay_g, az_g) * 57.2958;
-    float pitch = atan2(-ax_g, sqrt(ay_g * ay_g + az_g * az_g)) * 57.2958;
+    float roll  = atan2( ay_g, az_g ) * 57.2958;
+    float pitch = atan2( -ax_g, sqrt(ay_g * ay_g + az_g * az_g) ) * 57.2958;
 
     accel = {
 	ax_g,
@@ -282,36 +309,17 @@ int read_bmi160( AccelData& accel )
 	pitch
     };
 
-    // Serial.print("ACC [g]  ");
-    // Serial.print(ax_g, 3); Serial.print(" ");
-    // Serial.print(ay_g, 3); Serial.print(" ");
-    // Serial.print(az_g, 3);
-
-    // Serial.print(" | GYR [dps] ");
-    // Serial.print(gx_dps, 1); Serial.print(" ");
-    // Serial.print(gy_dps, 1); Serial.print(" ");
-    // Serial.println(gz_dps, 1);
-
-
-
-
-    // Serial.print("Roll: "); Serial.print(roll, 2); Serial.print(" Pitch: "); Serial.println(pitch, 2);
-
-    // Serial.printf("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
-    // ax_g, ay_g, az_g, gx_dps, gy_dps, gz_dps, roll, pitch);
     return 0;
 }
+
 
 int write_reg1( uint8_t dev_addr, uint8_t val, bool endstop )
 {
     int res;
     Wire.beginTransmission( dev_addr );
-    Serial.println( "Begin" );
-    if( Wire.write(val) != 0 ) return -1;
-    Serial.println( "1" );
+    if( Wire.write(val) == 0 ) return -1;
     res = Wire.endTransmission( endstop );
     if( res != 0 ) return res;
-    Serial.println( "2" );
     return 0;
 }
 
@@ -319,14 +327,10 @@ int write_reg2( uint8_t dev_addr, uint8_t addr, uint8_t val, bool endstop )
 {
     int res;
     Wire.beginTransmission( dev_addr );
-    Serial.println( "Begin" );
-    if( Wire.write(addr) != 0 ) return -1;
-    Serial.println( "1" );
-    if( Wire.write(val) != 0 ) return -2;
-    Serial.println( "2" );
+    if( Wire.write(addr) == 0 ) return -1;
+    if( Wire.write(val) == 0 ) return -2;
     res = Wire.endTransmission( endstop );
     if( res != 0 ) return res;
-    Serial.println( "3" );
     return 0;
 }
 
@@ -335,27 +339,29 @@ int magneto_init()
     int res;
     //According to documentation:
     //8-average, 15 Hz default, normal measurement
-    write_reg2(
-	I2C_HMC_ADDR,
-	HMC_FREQ_REG_ADDR,
-	HMC_FREQ_REG_VALUE,
+    res = write_reg2(
+	I2C_QMC_ADDR,
+	QMC_FREQ_REG_ADDR,
+	QMC_FREQ_REG_VALUE,
 	true );
+    if( res != 0 ) return res;
 
-    write_reg2(
-	I2C_HMC_ADDR,
-	HMC_GAIN_REG_ADDR,
-	HMC_GAIN_REG_VALUE,
+    res = write_reg2(
+	I2C_QMC_ADDR,
+	QMC_GAIN_REG_ADDR,
+	QMC_GAIN_REG_VALUE,
 	true );
+    if( res != 0 ) return res;
 
 
 #ifndef MAGNETO_SINGLE
     //Continuous-measurement mode
-    write_reg2(
-	I2C_HMC_ADDR,
-	HMC_MODE_REG_ADDR,
-	HMC_MODE_REG_VALUE,
-	true
-	);
+    res = write_reg2(
+	I2C_QMC_ADDR,
+	QMC_MODE_REG_ADDR,
+	QMC_MODE_REG_VALUE,
+	true );
+    if( res != 0 ) return res;
 
     delay( 6 MS );
 #endif
@@ -367,7 +373,7 @@ int magneto_init()
     //Eventually it will be option 3, but for now it's option 1
 
     
-    return true;
+    return 0;
 }
 
 int read_magneto( MagnetoData& magneto )
@@ -375,28 +381,26 @@ int read_magneto( MagnetoData& magneto )
     int err;
 #ifdef MAGNETO_SINGLE
     write_reg2(
-	I2C_HMC_ADDR,
-	HMC_MODE_REG_ADDR,
-	HMC_MODE_REG_VALUE,
+	I2C_QMC_ADDR,
+	QMC_MODE_REG_ADDR,
+	QMC_MODE_REG_VALUE,
 	true );
     write_reg2(
-	I2C_HMC_ADDR,
-	HMC_MODE_REG_ADDR,
-	HMC_MODE_REG_VALUE,
-	true
-	);
+	I2C_QMC_ADDR,
+	QMC_MODE_REG_ADDR,
+	QMC_MODE_REG_VALUE,
+	true );
 
 
     //Switch to option 3
     delay( 6 MS );
 
     write_reg1(
-	I2C_HMC_ADDR,
+	I2C_QMC_ADDR,
 	0x02,
-	false
-	);
+	false );
 
-    Wire.requestBytes( I2C_HMC_ADDR, 6 );
+    Wire.requestBytes( I2C_QMC_ADDR, 6 );
 
     //Read values
     {
@@ -426,20 +430,18 @@ int read_magneto( MagnetoData& magneto )
     
 #else
     write_reg1(
-	I2C_HMC_ADDR,
+	I2C_QMC_ADDR,
 	0x06,
-	false
-	);
-    Wire.requestFrom( I2C_HMC_ADDR, 6 );
+	false );
+    Wire.requestFrom( I2C_QMC_ADDR, 6 );
 
     //Read values
     
 
     write_reg1(
-	I2C_HMC_ADDR,
+	I2C_QMC_ADDR,
 	0x03,
-	true
-	);
+	true );
 #endif
     return 0;
 }
@@ -447,46 +449,71 @@ int read_magneto( MagnetoData& magneto )
 void I2CTask( void* params )
 {
 
-    
     Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
 
-    if( !bmi160_init() )
+    bool bmi_up = bmi160_init();
+    if( !bmi_up )
     {
-	Serial.println( "Could not initialize BMI160" );
+	Serial.print( "Could not initialize BMI160" );
     }
 
+    // res = magneto_init();
+    // if( res != 0 )
+    // {
+    // 	Serial.println( "Could not initialize magnetometer, code: " );
+    // 	Serial.println( res );	
+    // }
 
-    if( !magneto_init() )
-    {
-	Serial.println( "Could not initialize magnetometer" );
-    }
+    QMC5883P qmc;
+    bool qmc_up = qmc.begin();
+    if( !qmc_up )
+	Serial.println( "Could not initialize QMC" );
+    qmc.setHardIronOffsets( QMC_OFFSET_X, QMC_OFFSET_Y );
 
     float roll, pitch;
     AccelData accel;
     MagnetoData magneto;
     int status;
+    float xyz[3];
+    float heading;
     for( ;; )
     {
-	// read_bmi160( accel );
-	
-	// Serial.print( "ortho_x: " ); Serial.println( accel.ortho_x );
-	// Serial.print( "ortho_y: " ); Serial.println( accel.ortho_y );
-	// Serial.print( "ortho_z: " ); Serial.println( accel.ortho_z );
-	// Serial.print( "gyro_x: " ); Serial.println( accel.gyro_x );
-	// Serial.print( "gyro_y: " ); Serial.println( accel.gyro_y );
-	// Serial.print( "gyro_z: " ); Serial.println( accel.gyro_z );
-	// Serial.print( "roll: " ); Serial.println( accel.roll );
-	// Serial.print( "pitch: " ); Serial.println( accel.pitch );
-	// Serial.println();
-	status = read_magneto( magneto );
-	if( status != 0 )
+	if( bmi_up )
 	{
-	    Serial.println( "Could not read magnetometer" );
-	    continue;
+	    read_bmi160( accel );
+	
+	    Serial.printf( "ortho_x: %f\n", accel.ortho_x );
+	    Serial.printf( "ortho_y: %f\n", accel.ortho_y );
+	    Serial.printf( "ortho_z: %f\n", accel.ortho_z );
+	    Serial.printf( "gyro_x: %f\n", accel.gyro_x );
+	    Serial.printf( "gyro_y: %f\n", accel.gyro_y );
+	    Serial.printf( "gyro_z: %f\n", accel.gyro_z );
+	    Serial.printf( "roll: %f\n", accel.roll );
+	    Serial.printf( "pitch: %f\n\n", accel.pitch );
 	}
-	Serial.print( "Magneto x: " ); Serial.println( magneto.x );
-	Serial.print( "Magneto y: " ); Serial.println( magneto.y );
-	Serial.print( "Magneto z: " ); Serial.println( magneto.z );
+	else
+	    Serial.println( "BMI160 is not up; not reading" );
+	// status = read_magneto( magneto );
+	// if( status != 0 )
+	// {
+	//     Serial.println( "Could not read magnetometer" );
+	//     continue;
+	// }
+	// Serial.printf( "Magneto x: %i\n", magneto.x );
+	// Serial.printf( "Magneto y: %i\n", magneto.y );
+	// Serial.printf( "Magneto z: %i\n", magneto.z );
+
+	if( qmc_up )
+	{
+	    if( qmc.readXYZ(xyz) )
+	    {
+		heading = qmc.getHeadingDeg( QMC_DECL_ANGLE );
+		Serial.printf( "X:%.2f  Y:%.2f  Z:%.2f µT  |  Heading: %3.0f°\n",
+			       xyz[0], xyz[1], xyz[2], heading );
+	    }
+	}
+	else
+	    Serial.println( "QMC is not up; not reading" );
 	
 	delay( 500 MS );
     }
