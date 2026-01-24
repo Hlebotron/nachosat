@@ -18,12 +18,13 @@
 #define BMP_RES_BITS		( 16 )
 
 #define QMC_SINGLE_READ
-#define QMC_DECL_ANGLE		( 47 )
-#define QMC_OFFSET_X		( 0.751f )
-#define QMC_OFFSET_Y		( 0.038f )
-#define QMC_SCALE_X		( 0.390f )
-#define QMC_SCALE_Y		( 0.414f )
-#define QMC_SCALE_AVG		( 0.402f )
+#define QMC_DECL_ANGLE		( 5.75090 )
+#define QMC_OFFSET_X		( 0.751 )
+#define QMC_OFFSET_Y		( 0.038 )
+#define QMC_SCALE_X		( 0.390 )
+#define QMC_SCALE_Y		( 0.414 )
+#define QMC_SCALE_AVG		( 0.402 )
+#define QMC_ANGLE_OFFSET	( 210.0 )
 
 #define PID_COEFF_P		( 1 )
 #define PID_COEFF_I		( 1 )

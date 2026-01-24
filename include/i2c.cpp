@@ -238,34 +238,62 @@ int bmi160_read16( uint8_t reg, int16_t& out )
 int bmi160_init()
 {
     uint8_t id;
-    int res = bmi160_read8( BMI_CHIP_ID, id );
+    int res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_CHIP_ID,
+	id,
+	true );
     if( res != 0 ) return res;
     if ( id != 0xD1 ) return -3;
 
     // Accelerometer normal mode
-    res = bmi160_write(BMI_CMD, 0x11);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_CMD,
+	0x11,
+	true );
     if( res != 0 ) return res;
     delay(50);
 
     // Gyroscope normal mode
-    res = bmi160_write(BMI_CMD, 0x15);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_CMD,
+	0x15
+	true );
     if( res != 0 ) return res;
     delay(50);
 
     // ACC: 100 Hz, normal BW
-    res = bmi160_write(BMI_ACC_CONF, 0x28);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_ACC_CONF,
+	0x28,
+	true );
     if( res != 0 ) return res;
 
     // ACC: ±2g
-    res = bmi160_write(BMI_ACC_RANGE, 0x03);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_ACC_RANGE,
+	0x03,
+	true );
     if( res != 0 ) return res;
 
     // GYRO: 100 Hz
-    res = bmi160_write(BMI_GYR_CONF, 0x28);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_GYR_CONF,
+	0x28,
+	true );
     if( res != 0 ) return res;
 
     // GYRO: ±2000 dps
-    res = bmi160_write(BMI_GYR_RANGE, 0x00);
+    res = write_reg2(
+	I2C_BMI_ADDR,
+	BMI_GYR_RANGE,
+	0x00,
+	true );
     if( res != 0 ) return res;
 
     return true;
@@ -363,15 +391,13 @@ int magneto_init()
 	true );
     if( res != 0 ) return res;
 
-    delay( 6 MS );
-#endif
-
     //Options:
     //1. Wait 6ms
     //2. Monitor status register (poll if I understand correctly)
     //3. Use DRDY hardware interrupt pin
     //Eventually it will be option 3, but for now it's option 1
-
+    delay( 6 MS );
+#endif
     
     return 0;
 }
@@ -391,7 +417,6 @@ int read_magneto( MagnetoData& magneto )
 	QMC_MODE_REG_VALUE,
 	true );
 
-
     //Switch to option 3
     delay( 6 MS );
 
@@ -399,7 +424,6 @@ int read_magneto( MagnetoData& magneto )
 	I2C_QMC_ADDR,
 	0x02,
 	false );
-
     Wire.requestBytes( I2C_QMC_ADDR, 6 );
 
     //Read values
@@ -416,10 +440,10 @@ int read_magneto( MagnetoData& magneto )
 	    switch( i / 2 )
 	    {
 	    case 1:
-		magneto.x = ( Wire.read() << 8 ) | val;
+		magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X
 		break;
 	    case 2:
-		magneto.z = ( Wire.read() << 8 ) | val;
+		magneto.z = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
 		break;
 	    case 3:
 		magneto.y = ( Wire.read() << 8 ) | val;
@@ -478,21 +502,22 @@ void I2CTask( void* params )
     float heading;
     for( ;; )
     {
-	if( bmi_up )
-	{
-	    read_bmi160( accel );
+	// if( bmi_up )
+	// {
+	//     read_bmi160( accel );
 	
-	    Serial.printf( "ortho_x: %f\n", accel.ortho_x );
-	    Serial.printf( "ortho_y: %f\n", accel.ortho_y );
-	    Serial.printf( "ortho_z: %f\n", accel.ortho_z );
-	    Serial.printf( "gyro_x: %f\n", accel.gyro_x );
-	    Serial.printf( "gyro_y: %f\n", accel.gyro_y );
-	    Serial.printf( "gyro_z: %f\n", accel.gyro_z );
-	    Serial.printf( "roll: %f\n", accel.roll );
-	    Serial.printf( "pitch: %f\n\n", accel.pitch );
-	}
-	else
-	    Serial.println( "BMI160 is not up; not reading" );
+	//     Serial.printf( "ortho_x: %f\n", accel.ortho_x );
+	//     Serial.printf( "ortho_y: %f\n", accel.ortho_y );
+	//     Serial.printf( "ortho_z: %f\n", accel.ortho_z );
+	//     Serial.printf( "gyro_x: %f\n", accel.gyro_x );
+	//     Serial.printf( "gyro_y: %f\n", accel.gyro_y );
+	//     Serial.printf( "gyro_z: %f\n", accel.gyro_z );
+	//     Serial.printf( "roll: %f\n", accel.roll );
+	//     Serial.printf( "pitch: %f\n\n", accel.pitch );
+	// }
+	// else
+	//     Serial.println( "BMI160 is not up; not reading" );
+	
 	// status = read_magneto( magneto );
 	// if( status != 0 )
 	// {
@@ -507,7 +532,7 @@ void I2CTask( void* params )
 	{
 	    if( qmc.readXYZ(xyz) )
 	    {
-		heading = qmc.getHeadingDeg( QMC_DECL_ANGLE );
+		heading = fmod( qmc.getHeadingDeg(QMC_DECL_ANGLE) + QMC_ANGLE_OFFSET, 360 );
 		Serial.printf( "X:%.2f  Y:%.2f  Z:%.2f µT  |  Heading: %3.0f°\n",
 			       xyz[0], xyz[1], xyz[2], heading );
 	    }
