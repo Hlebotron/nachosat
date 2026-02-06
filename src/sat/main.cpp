@@ -1,19 +1,28 @@
 #include <HardwareSerial.h>
 #include <qmc5883p.h>
+
 #include "config.h"
 #include "definitions.h"
 
+QueueHandle_t spi_drq = xQueueCreate( QUEUE_LEN, sizeof(enum SpiDataSource) );
+QueueHandle_t i2c_drq = xQueueCreate( QUEUE_LEN, sizeof(enum I2CDataSource) );
+
+/* Corresponds to:
+   BMP280
+   Accelerometer
+   Magnetometer
+*/
+TimerHandle_t timers[ NUM_SOURCES ];
+// QueueHandle_t chute_drq = xQueueCreate( QUEUE_LEN, sizeof(enum ChuteDataSource) );
+// QueueHandle_t uart_out_queue = xQueueCreate( QUEUE_LEN, sizeof(enum RadioResponse) );
+// QueueHandle_t uart_in_queue = xQueueCreate( QUEUE_LEN, sizeof(union RadioRequest) );
+
 #include "i2c.cpp"
 #include "spi.cpp"
-// #include "chute.cpp"
+#include "chute.cpp"
 // #include "data_clock.cpp"
-// #include "uart.cpp"
+#include "uart.cpp"
 
-QueueHandle_t spi_drq = xQueueCreate( QUEUE_LEN, sizeof(enum SpiDataSource) );
-// QueueHandle_t i2c_drq = xQueueCreate( QUEUE_LEN, sizeof(struct I2CDataSource) );
-// QueueHandle_t chute_drq = xQueueCreate( QUEUE_LEN, sizeof(struct ChuteDataSource) );
-// QueueHandle_t uart_out_queue = xQueueCreate( QUEUE_LEN, sizeof(struct RadioResponse) );
-// QueueHandle_t uart_in_queue = xQueueCreate( QUEUE_LEN, sizeof(union RadioRequest) );
 
 // void IdleHook()
 // {
@@ -22,18 +31,42 @@ QueueHandle_t spi_drq = xQueueCreate( QUEUE_LEN, sizeof(enum SpiDataSource) );
 
 //     }
 // }
+void TimerCallback( TimerHandle_t timer )
+{
+    SpiDataSource spi;
+    I2CDataSource i2c;
+    
+    switch( (uint32_t) pvTimerGetTimerID(timer) )
+    {
+    case 0:
+	spi = SPI_BMP;
+	xQueueSendToBack( spi_drq, &spi, 0 );
+	break;
+    case 1:
+	i2c = I2C_ACCEL;
+	xQueueSendToBack( i2c_drq, &i2c, 0 );
+	break;
+    case 2:
+	i2c = I2C_MAGNETO;
+	xQueueSendToBack( i2c_drq, &i2c, 0 );
+	break;
+    }
+}
 
 void setup()
 {
     Serial.begin( 115200 );
 
+    for( int i = 0; i < NUM_SOURCES; i++ )
+	timers[ i ] = xTimerCreate( "timer", DEFAULT_DATA_REQUEST_INTERVAL, pdTRUE, (void*) i, TimerCallback );
+
     int *spi_param, *i2c_param, *chute_param, *clock_param, *uart_param;
-    // xTaskCreatePinnedToCore( SpiTask, "SpiTask", 10000, spi_param, 1, NULL, 0 );
+    xTaskCreatePinnedToCore( SpiTask, "SpiTask", 10000, spi_param, 1, NULL, 0 );
     xTaskCreatePinnedToCore( I2CTask, "I2CTask", 10000, i2c_param, 1, NULL, 0 );
     // xTaskCreatePinnedToCore( UartTask, "UartTask", 10000, uart_param, 1, NULL, 0 );
     // xTaskCreatePinnedToCore( ParachuteTask, "ParachuteTask", 10000, chute_param, 2, NULL, 1 );
     // xTaskCreatePinnedToCore( DataClockTask, "DataClockTask", 10000, clock_param, 1, NULL, 1 );
-
-    
+    for( int i = 0; i < NUM_SOURCES; i++ )
+	xTimerStart( timers[i], 100 );
 }
 void loop() {}

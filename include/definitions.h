@@ -1,12 +1,14 @@
+#define NUM_SOURCES	( 3 )
+
 enum I2CDataSource
 {
     I2C_ACCEL,
-    I2C_GPS
+    I2C_GPS,
+    I2C_MAGNETO
 };
 enum SpiDataSource
 {
-    SPI_BMP,
-    SPI_RADIO
+    SPI_BMP
 };
 enum ChuteDataSource
 {
@@ -15,6 +17,7 @@ enum ChuteDataSource
     CHUTE_MAGNET,
     CHUTE_GYRO
 };
+
 /* enum CmdOpcode */
 /* { */
 /*     CMD_MOVE_MOTOR, */
@@ -26,10 +29,21 @@ enum ChuteDataSource
 /*     enum CmdOpcode opcode; */
 /* }; */
 
-union RadioDataSource
+enum DataSourceEnum
+{
+    SOURCE_SPI,
+    SOURCE_I2C
+};
+
+union DataSourceUnion
 {
     enum I2CDataSource i2c;
     enum SpiDataSource spi;
+};
+struct DataSource
+{
+    enum DataSourceEnum denum;
+    union DataSourceUnion dunion;
 };
 
 enum DataDest
@@ -44,7 +58,7 @@ enum DataDest
 struct RadioRequest
 {
     enum DataDest dest;
-    union RadioDataSource source; 
+    union DataSourceUnion source; 
 };
 
 struct GPSData		{ float x, y; };
@@ -59,7 +73,7 @@ struct AccelData
     float roll;
     float pitch;
 };
-struct MagnetoData	{ float x, y, z; };
+struct MagnetoData	{ float x, y, z, head; };
 struct SDData		{};
 struct BMPData		{ float temp, pressure; };
 struct GyroData		{};
