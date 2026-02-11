@@ -5,201 +5,6 @@
 // extern SemaphoreHandle_t received_sem = xSemaphoreCreateBinary();
 // extern QueueHandle_t i2c_drq;
 
-// void received_isr()
-// {
-//     xSemaphoreGiveFromISR( received_queue, NULL );
-// }
-
-// float bmp_read_press()
-// {
-//     Serial.println( "Reading pressure" );
-//     Serial.println( "Begin transmission" );
-//     Wire.beginTransmission( I2C_BMP_ADDR );
-    
-//     Serial.println( "Write" );
-//     size_t written = Wire.write( BMP_PRESS );
-//     if( written == 0 )
-//     {
-// 	Serial.print( "No data written to write buffer" );
-// 	return -1.0;
-//     }
-    
-//     Serial.println( "End transmission" );
-//     uint8_t err = Wire.endTransmission();
-//     if ( err != 0 )
-//     {
-// 	switch( err )
-// 	{
-// 	case I2C_ERR_NACK_ADDR_TRANSMIT:
-// 	    Serial.println( "Error: Received NACK on transmit of address" );
-// 	    break;
-// 	case I2C_ERR_NACK_DATA_TRANSMIT:
-// 	    Serial.println( "Error: Received NACK on transmit of data" );
-// 	    break;
-// 	case I2C_ERR_LINE_BUSY:
-// 	    Serial.println( "Error: Line busy" );
-// 	    break;
-// 	}
-// 	return ( err * (-1.0) );
-//     }
-    
-//     Serial.println( "Begin transmission" );
-//     Wire.beginTransmission( I2C_BMP_ADDR );
-    
-//     Serial.println( "Request" );
-//     size_t read = Wire.requestFrom( I2C_BMP_ADDR, 2 );
-//     if( read == 0 )
-//     {
-// 	Serial.print( "No data read from read buffer" );
-// 	return -2.0;	
-//     }
-
-//     Serial.println( "End transmission" );
-//     err = Wire.endTransmission();
-//     if ( err != 0 )
-//     {
-// 	switch( err )
-// 	{
-// 	case I2C_ERR_NACK_ADDR_TRANSMIT:
-// 	    Serial.println( "Error: Received NACK on transmit of address" );
-// 	case I2C_ERR_NACK_DATA_TRANSMIT:
-// 	    Serial.println( "Error: Received NACK on transmit of data" );
-// 	case I2C_ERR_LINE_BUSY:
-// 	    Serial.println( "Error: Line busy" );
-// 	}
-// 	return ( err * (-1.0) );
-//     }
-
-//     Serial.println( "Read 1" );
-//     int tmp1 = Wire.read();
-//     if( tmp1 == -1 )
-//     {
-// 	Serial.println( "Failed to read byte 1" );
-//     }
-    
-//     Serial.println( "Read 2" );
-//     int tmp2 = Wire.read();
-//     if( tmp2 == -1 )
-//     {
-// 	Serial.println( "Failed to read byte 2" );
-//     }
-    
-
-
-
-//     return ( ( tmp1 << 8 ) + tmp2 ) * BMP_MAX_RES_PRESS * ( float )( pow( 2, ( BMP_MAX_RES_BITS - BMP_RES_BITS ) ) );
-// }
-
-// float bmp_read_temp()
-// {
-//     //TODO: Error handling
-//     Serial.println( "Reading temperature" );
-//     Serial.println( "Begin transmission" );
-//     Wire.beginTransmission( I2C_BMP_ADDR );
-//     Serial.println( "Write" );
-//     Wire.write( BMP_TEMP );
-//     Serial.println( "End transmission" );
-//     Wire.endTransmission();
-
-//     Serial.println( "Begin transmission" );
-//     Wire.beginTransmission( I2C_BMP_ADDR );
-//     Serial.println( "Request" );
-//     Wire.requestFrom( I2C_BMP_ADDR, 2 );
-//     Serial.println( "Read 1" );
-//     uint16_t tmp = Wire.read();
-//     Serial.println( "Read 2" );
-//     tmp |= ( Wire.read() << 8 );
-//     Serial.println( "End transmission" );
-//     Wire.endTransmission();
-
-//     return tmp * BMP_MIN_RES_TEMP / ( float )( pow( 2, ( BMP_RES_BITS - BMP_MIN_RES_BITS ) ) );
-// }
-
-// #include "hmc5883l.h"
-
-
-// static volatile bool data_ready = false;
-
-// void IRAM_ATTR hmc5883l_drdy_isr() {
-//     data_ready = true;
-// }
-
-// static bool i2c_write(uint8_t reg, uint8_t val) {
-//     Wire.beginTransmission(QMC5883L_ADDR);
-//     Wire.write(reg);
-//     Wire.write(val);
-//     return Wire.endTransmission() == 0;
-// }
-
-// static bool i2c_read(uint8_t reg, uint8_t *buf, uint8_t len) {
-//     Wire.beginTransmission(QMC5883L_ADDR);
-//     Wire.write(reg);
-//     if (Wire.endTransmission(false) != 0) return false;
-//     Wire.requestFrom(QMC5883L_ADDR, len);
-//     for (uint8_t i = 0; i < len; i++) {
-//         if (!Wire.available()) return false;
-//         buf[i] = Wire.read();
-//     }
-//     return true;
-// }
-
-// bool hmc5883l_init() {
-//     // Config A: 8-sample avg, 15 Hz output, normal measurement
-//     if (!i2c_write(QMC5883L_REG_CONFIG_A, 0x70)) return false;
-
-//     // Config B: Gain = 1.3 Ga (default)
-//     if (!i2c_write(QMC5883L_REG_CONFIG_B, 0x20)) return false;
-
-//     // Continuous measurement mode
-//     if (!i2c_write(QMC5883L_REG_MODE, QMC5883L_MODE_CONTINUOUS)) return false;
-
-//     data_ready = false;
-//     return true;
-// }
-
-// bool hmc5883l_read(hmc5883l_data_t *out) {
-//     if (!data_ready) return false;
-
-//     uint8_t buf[6];
-//     if (!i2c_read(QMC5883L_REG_DATA_X_MSB, buf, 6)) return false;
-
-//     out->x = (int16_t)((buf[0] << 8) | buf[1]);
-//     out->z = (int16_t)((buf[2] << 8) | buf[3]);
-//     out->y = (int16_t)((buf[4] << 8) | buf[5]);
-
-//     data_ready = false;
-//     return true;
-// }
-
-
-// void I2CTask( void* params )
-// {
-//     // TickType_t prev_wake = xTaskGetTickCount();
-
-//     Wire.begin();
-//     QueueSetHandle_t queue_set = xQueueCreateSet( QUEUE_LEN + 1 );
-//     xQueueAddToSet( received_queue, queue_set );
-//     xQueueAddToSet( i2c_queue, queue_set );
-
-//     static char c = '\0';
-    
-//     for( ;; )
-//     {
-// 	QueueSetMemberHandle_t member = xQueueSelectFromSet( queue_set, portMAX_DELAY );
-// 	if( member == received_sem ) //Receiving from I2C bus
-// 	{
-// 	    while( Wire.available() )
-// 	    {
-		
-// 	    }
-		
-// 	}
-// 	else if( member == i2c_drq ) //Receiving data request
-// 	{
-	    
-// 	}
-//     }
-// }
 int bmi160_write( uint8_t reg, uint8_t data )
 {
     Wire.beginTransmission( I2C_BMI_ADDR );
@@ -319,40 +124,26 @@ int bmi160_init()
     return true;
 }
 
-int read_bmi160( AccelData& accel )
+int read_bmi160_accel( AccelData& accel )
 {
-    int16_t ax, ay, az, gx, gy, gz;
-    int res = bmi160_read16( BMI_ACC_X_L, ax );
+    static int16_t x, y, z;
+    static int res = bmi160_read16( BMI_ACC_X_L, x );
     if( res != 0 ) return res;
-    res = bmi160_read16( BMI_ACC_X_L + 2, ay );
+    res = bmi160_read16( BMI_ACC_X_L + 2, y );
     if( res != 0 ) return res;
-    res = bmi160_read16( BMI_ACC_X_L + 4, az );
+    res = bmi160_read16( BMI_ACC_X_L + 4, z );
     if( res != 0 ) return res;
-    float ax_g = ax / 16384.0f;
-    float ay_g = ay / 16384.0f;
-    float az_g = az / 16384.0f;
+    static float x_g = x / 16384.0f;
+    static float y_g = y / 16384.0f;
+    static float z_g = z / 16384.0f;
 
-    
-    res = bmi160_read16( BMI_GYR_X_L, gx );
-    if( res != 0 ) return res;
-    res = bmi160_read16( BMI_GYR_X_L + 2, gy );
-    if( res != 0 ) return res;
-    res = bmi160_read16( BMI_GYR_X_L + 4, gz );
-    if( res != 0 ) return res;
-    float gx_dps = gx / 16.4f;
-    float gy_dps = gy / 16.4f;
-    float gz_dps = gz / 16.4f;
-
-    float roll  = atan2( ay_g, az_g ) * 57.2958;
-    float pitch = atan2( -ax_g, sqrt(ay_g * ay_g + az_g * az_g) ) * 57.2958;
+    static float roll  = atan2( y_g, z_g ) * 57.2958;
+    static float pitch = atan2( -x_g, sqrt(y_g * y_g + z_g * z_g) ) * 57.2958;
 
     accel = {
-	ax_g,
-	ay_g,
-	az_g,
-	gx_dps,
-	gy_dps,
-	gz_dps,
+	x_g,
+	y_g,
+	z_g,
 	roll,
 	pitch
     };
@@ -361,7 +152,27 @@ int read_bmi160( AccelData& accel )
 }
 
 
+int read_bmi160_gyro( GyroData& gyro )
+{
+    static int16_t x, y, z;
+    static int res = bmi160_read16( BMI_GYR_X_L, x );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_GYR_X_L + 2, y );
+    if( res != 0 ) return res;
+    res = bmi160_read16( BMI_GYR_X_L + 4, z );
+    if( res != 0 ) return res;
+    static float x_dps = x / 16.4f;
+    static float y_dps = y / 16.4f;
+    static float z_dps = z / 16.4f;
 
+    gyro = {
+	x_dps,
+	y_dps,
+	z_dps
+    };
+
+    return 0;
+}
 
 int magneto_init()
 {
@@ -485,18 +296,21 @@ void I2CTask( void* params )
 
     float roll, pitch;
     AccelData accel;
+    GyroData gyro;
     MagnetoData magneto;
     int status;
     float xyz[3];
     float heading;
-    I2CDataSource queue_val;
+    enum Peripheral queue_val;
+    struct RadioResponse resp;
+    
     for( ;; )
     {
 	xQueueReceive( i2c_drq,  &queue_val, portMAX_DELAY );
 
 	switch( queue_val )
 	{
-	case I2C_MAGNETO:
+	case PERI_MAGNETO:
 	    if( qmc_up )
 	    {
 		if( qmc.readXYZ(xyz) )
@@ -508,6 +322,11 @@ void I2CTask( void* params )
 			Serial.println( "Could not read magnetometer" );
 			continue;
 		    }
+		    
+		    resp.sensor = PERI_MAGNETO;
+		    resp.data.magneto = magneto;
+		    xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+		    
 		    Serial.printf( "Magneto x: %i\n", magneto.x );
 		    Serial.printf( "Magneto y: %i\n", magneto.y );
 		    Serial.printf( "Magneto z: %i\n", magneto.z );
@@ -521,19 +340,41 @@ void I2CTask( void* params )
 	    }
 	    break;
 	    
-	case I2C_ACCEL:
+	case PERI_ACCEL:
 	    if( bmi_up )
 	    {
-	        read_bmi160( accel );
-	
-	        Serial.printf( "ortho_x: %f\n", accel.ortho_x );
-	        Serial.printf( "ortho_y: %f\n", accel.ortho_y );
-	        Serial.printf( "ortho_z: %f\n", accel.ortho_z );
-	        Serial.printf( "gyro_x: %f\n", accel.gyro_x );
-	        Serial.printf( "gyro_y: %f\n", accel.gyro_y );
-	        Serial.printf( "gyro_z: %f\n", accel.gyro_z );
+	        read_bmi160_accel( accel );
+
+		resp.sensor = PERI_ACCEL;
+		resp.data.accel = accel;
+		xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+		
+	        Serial.printf( "ortho_x: %f\n", accel.x );
+	        Serial.printf( "ortho_y: %f\n", accel.y );
+	        Serial.printf( "ortho_z: %f\n", accel.z );
 	        Serial.printf( "roll: %f\n", accel.roll );
 	        Serial.printf( "pitch: %f\n\n", accel.pitch );
+	    }
+	    else
+	    {
+		bmi_up = !bmi160_init();
+		Serial.println( (bmi_up) ? "Successfully started BMI180" : "Failed to start BMI180" );
+	    }
+	
+
+	    break;
+	case PERI_GYRO:
+	    if( bmi_up )
+	    {
+		int res = read_bmi160_gyro( gyro );
+
+		resp.sensor = PERI_GYRO;
+		resp.data.gyro = gyro;
+		xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+		
+	        Serial.printf( "gyro_x: %f\n", gyro.x );
+	        Serial.printf( "gyro_y: %f\n", gyro.y );
+	        Serial.printf( "gyro_z: %f\n", gyro.z );
 	    }
 	    else
 	    {

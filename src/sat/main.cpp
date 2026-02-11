@@ -4,8 +4,10 @@
 #include "config.h"
 #include "definitions.h"
 
-QueueHandle_t spi_drq = xQueueCreate( QUEUE_LEN, sizeof(enum SpiDataSource) );
-QueueHandle_t i2c_drq = xQueueCreate( QUEUE_LEN, sizeof(enum I2CDataSource) );
+QueueHandle_t spi_drq = xQueueCreate( SPI_DRQ_LEN, sizeof(enum Peripheral) );
+QueueHandle_t i2c_drq = xQueueCreate( I2C_DRQ_LEN, sizeof(enum Peripheral) );
+QueueHandle_t uart_out_drq = xQueueCreate( UART_OUT_LEN, sizeof(struct RadioResponse) );
+SemaphoreHandle_t uart_in_sem = xSemaphoreCreateBinary();
 
 /* Corresponds to:
    BMP280
@@ -13,9 +15,8 @@ QueueHandle_t i2c_drq = xQueueCreate( QUEUE_LEN, sizeof(enum I2CDataSource) );
    Magnetometer
 */
 TimerHandle_t timers[ NUM_SOURCES ];
-// QueueHandle_t chute_drq = xQueueCreate( QUEUE_LEN, sizeof(enum ChuteDataSource) );
-// QueueHandle_t uart_out_queue = xQueueCreate( QUEUE_LEN, sizeof(enum RadioResponse) );
-// QueueHandle_t uart_in_queue = xQueueCreate( QUEUE_LEN, sizeof(union RadioRequest) );
+// QueueHandle_t chute_drq = xQueueCreate( CHUTE_DRQ_LEN, sizeof(enum ChuteDataSource) );
+
 
 #include "i2c.cpp"
 #include "spi.cpp"
@@ -33,22 +34,21 @@ TimerHandle_t timers[ NUM_SOURCES ];
 // }
 void TimerCallback( TimerHandle_t timer )
 {
-    SpiDataSource spi;
-    I2CDataSource i2c;
+    enum Peripheral sensor;
     
     switch( (uint32_t) pvTimerGetTimerID(timer) )
     {
     case 0:
-	spi = SPI_BMP;
-	xQueueSendToBack( spi_drq, &spi, 0 );
+	sensor = PERI_BMP;
+	xQueueSendToBack( spi_drq, &sensor, 0 );
 	break;
     case 1:
-	i2c = I2C_ACCEL;
-	xQueueSendToBack( i2c_drq, &i2c, 0 );
+	sensor = PERI_ACCEL;
+	xQueueSendToBack( i2c_drq, &sensor, 0 );
 	break;
     case 2:
-	i2c = I2C_MAGNETO;
-	xQueueSendToBack( i2c_drq, &i2c, 0 );
+	sensor = PERI_MAGNETO;
+	xQueueSendToBack( i2c_drq, &sensor, 0 );
 	break;
     }
 }

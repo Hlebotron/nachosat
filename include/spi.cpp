@@ -4,6 +4,7 @@
 // #include "spi.h"
 
 extern QueueHandle_t spi_drq;
+extern QueueHandle_t uart_out_drq;
 
 int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, struct BMPData& data )
 {
@@ -55,14 +56,15 @@ void SpiTask( void* params )
 
     BMPData data = { -500.0, -500.0 };
 
-    SpiDataSource queue_val;
+    enum Peripheral queue_val;
+    struct RadioResponse resp;
     
     for( ;; )
     {
 	xQueueReceive( spi_drq, &queue_val, portMAX_DELAY );
-	//TODO: If BMP remains the only SPI device outside of the SD card reader, then remove the switch case and replace it with a counting semaphore
+	//TODO: If BMP remains the only SPI device outside of the SD card reader, then remove the switch case and replace the queue it with a counting semaphore
 	switch( queue_val ) {
-	case SPI_BMP:
+	case PERI_BMP:
 	    if( bmp_up )
 	    {
 	    int32_t read_status = read_bmp( bmp_temp, bmp_press, data );
@@ -75,7 +77,10 @@ void SpiTask( void* params )
 		Serial.println( "BMP Read Error: bmp_pressure is null" );	    
 		continue;
 	    }
-	
+	    
+	    resp.sensor = PERI_BMP;
+	    resp.data.bmp = { data.temp, data.pressure };
+	    xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
 	    Serial.printf(  "\nTemp: %f\n", data.temp );
 	    Serial.printf(  "Pressure: %f\n", data.pressure );
 	    }
@@ -85,8 +90,9 @@ void SpiTask( void* params )
 		Serial.println( (bmp_up) ? "Successfully started BMP280" : "Failed to start BMP280" );
 	    }
 	    break;
+	default:
+	    Serial.printf( "Invalid sensor, value: %i\n", queue_val );
 	}
-	
 
     }
 }

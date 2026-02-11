@@ -1,9 +1,0 @@
-(undo-tree-save-format-version . 1)
-"bb09ed3ea06c8b96033c42a5c43c8c0874c117ac"
-[nil nil nil nil (26955 47479 911916 138000) 0 nil]
-([nil nil ((#("r" 0 1 (face font-lock-function-name-face fontified t)) . 36) (#("e" 0 1 (face font-lock-function-name-face fontified t)) . 36) (#("t" 0 1 (face font-lock-function-name-face fontified t)) . 36) (#("u" 0 1 (face font-lock-function-name-face fontified t)) . 36) (#("o" 0 1 (face font-lock-function-name-face fontified t)) . 36) (#("R" 0 1 (face font-lock-function-name-face fontified t)) . 36) (t 26953 12472 752905 529000)) nil (26955 47479 911914 377000) 0 nil])
-([nil nil ((36 . 41)) nil (26955 47479 911910 322000) 0 nil])
-([nil nil ((#("u" 0 1 (face font-lock-string-face c-in-sws t fontified t)) . 16) (#("o" 0 1 (face font-lock-string-face c-in-sws t fontified t)) . 16) (#("r" 0 1 (face font-lock-string-face fontified t c-in-sws t)) . 16) (t 26955 47479 915056 754000)) nil (26955 47483 660028 442000) 0 nil])
-([nil nil ((#("r" 0 1 (face font-lock-string-face c-in-sws t fontified t)) . 16) (#("e" 0 1 (face font-lock-string-face c-in-sws t fontified t)) . 16) (#("t" 0 1 (face font-lock-string-face c-in-sws t fontified t)) . 16)) nil (26955 47483 660027 501000) 0 nil])
-([nil current ((16 . 21)) nil (26955 47483 660023 692000) 0 nil])
-nil

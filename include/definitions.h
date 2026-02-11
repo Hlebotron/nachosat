@@ -1,119 +1,54 @@
 #define NUM_SOURCES	( 3 )
 
-enum I2CDataSource
+enum Interface
 {
-    I2C_ACCEL,
-    I2C_GPS,
-    I2C_MAGNETO
-};
-enum SpiDataSource
-{
-    SPI_BMP
-};
-enum ChuteDataSource
-{
-    CHUTE_BMP,
-    CHUTE_GPS,
-    CHUTE_MAGNET,
-    CHUTE_GYRO
+    IF_I2C,
+    IF_SPI,
+    IF_CHUTE,
+    IF_UART
 };
 
-/* enum CmdOpcode */
+enum Peripheral
+{
+    //I2C devices
+    PERI_ACCEL,	
+    PERI_GYRO,
+    PERI_GPS,
+    PERI_MAGNETO,
+    
+    //SPI devices
+    PERI_BMP,
+    PERI_SD
+};
+
+/* //Comes from ground station */
+/* struct RadioRequest */
 /* { */
-/*     CMD_MOVE_MOTOR, */
-/*     CMD_GET_STATUS */
+    
 /* }; */
-/* struct RadioCmd */
-/* { */
-/*     int32_t arg; */
-/*     enum CmdOpcode opcode; */
-/* }; */
-
-enum DataSourceEnum
-{
-    SOURCE_SPI,
-    SOURCE_I2C
-};
-
-union DataSourceUnion
-{
-    enum I2CDataSource i2c;
-    enum SpiDataSource spi;
-};
-struct DataSource
-{
-    enum DataSourceEnum denum;
-    union DataSourceUnion dunion;
-};
-
-enum DataDest
-{
-    DEST_I2C,
-    DEST_CHUTE,
-    DEST_SPI,
-    DEST_UART
-};
-
-//Comes from ground station
-struct RadioRequest
-{
-    enum DataDest dest;
-    union DataSourceUnion source; 
-};
 
 struct GPSData		{ float x, y; };
-struct AccelData
-{
-    float ortho_x;
-    float ortho_y;
-    float ortho_z;
-    float gyro_x;
-    float gyro_y;
-    float gyro_z;
-    float roll;
-    float pitch;
-};
 struct MagnetoData	{ float x, y, z, head; };
-struct SDData		{};
 struct BMPData		{ float temp, pressure; };
-struct GyroData		{};
+struct AccelData 	{ float x, y, z, roll, pitch; };
+struct GyroData 	{ float x, y, z; };
+
+union PeriData
+{
+    struct GPSData	gps;
+    struct AccelData	accel;
+    struct GyroData	gyro;
+    struct MagnetoData	magneto;
+    struct BMPData	bmp;
+    uint8_t		byte;
+};
 
 //Comes from sat
-struct RadioResponse	{};
-
-union SpiDataContent
+struct RadioResponse
 {
-    struct BMPData bmp;
-    /* struct  */
-};
-union I2CDataContent
-{
-    struct AccelData accel;
-    struct MagnetoData magneto;
-};
-union ChuteDataContent
-{
-    struct BMPData bmp;
-    struct GPSData gps;
-    struct MagnetoData magneto;
-    struct GyroData gyro;
-};
-
-struct SpiData
-{
-    enum SpiDataSource source;
-    union SpiDataContent content;
-};
-struct I2CData
-{
-    enum I2CDataSource source;
-    union I2CDataContent content;
-};
-struct ChuteData
-{
-    enum ChuteDataSource source;
-    union ChuteDataContent content;
-};
+    enum Peripheral	sensor;
+    union PeriData	data;
+}; 
 
 #define BMI_CHIP_ID   			( 0x00 )
 #define BMI_CMD       			( 0x7E )
@@ -130,6 +65,9 @@ struct ChuteData
 #define BMP_PRESS			( 0xF7 )
 #define BMP_MIN_RES_TEMP		( 0.0050f )
 #define BMP_MAX_RES_PRESS		( 0.16f )
+#define BMP_MIN_RES_BITS		( 16 )
+#define BMP_MAX_RES_BITS		( 20 )
+
 
 #define QMC_FREQ_REG_ADDR		( 0x00 )
 #define QMC_GAIN_REG_ADDR		( 0x01 )
@@ -150,11 +88,11 @@ struct ChuteData
 
 #define MS				/ portTICK_PERIOD_MS
 
-typedef struct {
-    int16_t x;
-    int16_t y;
-    int16_t z;
-} hmc5883l_data_t;
+/* typedef struct { */
+/*     int16_t x; */
+/*     int16_t y; */
+/*     int16_t z; */
+/* } hmc5883l_data_t; */
 
 /* #ifndef QMC5883L_H */
 /* #define QMC5883L_H */

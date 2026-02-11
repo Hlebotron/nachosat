@@ -1,5 +1,3 @@
-#define QUEUE_LEN 			( 64 )
-
 #define SPI_MISO 			( 19 ) //BMP: SDO/SDD
 #define SPI_MOSI 			( 23 ) //BMP: SDA
 #define SPI_SCK 			( 18 ) //BMP: SCL
@@ -9,11 +7,12 @@
 
 #define I2C_SDA				( 21 )
 #define I2C_SCL				( 22 )
-#define I2C_FREQ			( 100000 )
+#define I2C_FREQ			( 1e5 )
 
-
-#define BMP_MIN_RES_BITS		( 16 )
-#define BMP_MAX_RES_BITS		( 20 )
+#define SPI_DRQ_LEN			( 64 )
+#define I2C_DRQ_LEN			( 64 )
+#define CHUTE_DRQ_LEN			( 64 )
+#define UART_OUT_LEN			( 64 )
 
 #define BMP_RES_BITS			( 16 )
 
@@ -34,4 +33,7 @@
 #define UART_RADIO_RX 			( 16 )
 #define UART_RADIO_TX 			( 17 )
 
+#define RADIO_FREQ			( 868e6 )
+
 #define DEFAULT_DATA_REQUEST_INTERVAL	( 5000 MS )
+#define TICKS_TO_WAIT			( 10 )
