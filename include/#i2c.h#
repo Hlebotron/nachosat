@@ -42,9 +42,7 @@ int bmi160_read16( uint8_t reg, int16_t& out );
 /*!
   @brief 	Initialize the BMI160
   @return	 0:	OK
-  		-3:	assertion id != 0xD1 failed
-		-4:	Wire.write() failed (bmi160_read8)
-  		-5:	Wire.requestFrom() failed (bmi160_read8)
+  		-1:	assertion id != 0xD1 failed
 		Everything else is the result of write_reg2()
  */
 int bmi160_init();
@@ -53,7 +51,7 @@ int bmi160_init();
   @brief 	Read the acceleration data of the BMI160
   @param accel 	Accelerometer struct to store the data in
   @return	0:	OK
-
+  		
 		Everything else is the result of bmi160_read16()
  */
 int read_bmi160_accel( AccelData& accel );

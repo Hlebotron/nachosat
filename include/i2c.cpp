@@ -5,21 +5,15 @@
 // extern SemaphoreHandle_t received_sem = xSemaphoreCreateBinary();
 // extern QueueHandle_t i2c_drq;
 
-int bmi160_write( uint8_t reg, uint8_t data )
-{
-    Wire.beginTransmission( I2C_BMI_ADDR );
-    if( !Wire.write( reg ) ) return -1;
-    if( !Wire.write( data ) ) return -1;
-    return Wire.endTransmission();
-}
+static uint8_t sensor_fails[] = { 0, 0 }; //BMI160, QMC
 
 int bmi160_read8( uint8_t reg, uint8_t& out )
 {
     Wire.beginTransmission( I2C_BMI_ADDR );
-    if( Wire.write( reg ) == 0 ) return -1;
+    if( !Wire.write( reg ) ) return -1;
     int res = Wire.endTransmission( false );
     if( res != 0 ) return res;
-    if( Wire.requestFrom( I2C_BMI_ADDR, 1 ) == 0 ) return -2;
+    if( !Wire.requestFrom( I2C_BMI_ADDR, 1 ) ) return -2;
     out = Wire.read();
     return 0;
 }
@@ -43,7 +37,7 @@ int write_reg1( uint8_t dev_addr, uint8_t val, bool endstop )
 {
     int res;
     Wire.beginTransmission( dev_addr );
-    if( Wire.write(val) == 0 ) return -1;
+    if( !Wire.write(val) ) return -1;
     res = Wire.endTransmission( endstop );
     if( res != 0 ) return res;
     return 0;
@@ -53,8 +47,8 @@ int write_reg2( uint8_t dev_addr, uint8_t addr, uint8_t val, bool endstop )
 {
     int res;
     Wire.beginTransmission( dev_addr );
-    if( Wire.write(addr) == 0 ) return -1;
-    if( Wire.write(val) == 0 ) return -2;
+    if( !Wire.write(addr) ) return -1;
+    if( !Wire.write(val) ) return -2;
     res = Wire.endTransmission( endstop );
     if( res != 0 ) return res;
     return 0;
@@ -63,13 +57,9 @@ int write_reg2( uint8_t dev_addr, uint8_t addr, uint8_t val, bool endstop )
 int bmi160_init()
 {
     uint8_t id;
-    int res = write_reg2(
-	I2C_BMI_ADDR,
-	BMI_CHIP_ID,
-	id,
-	true );
-    if( res != 0 ) return res;
-    if ( id != 0xD1 ) return -3;
+    int res = bmi160_read8( BMI_CHIP_ID, id );
+    if( res != 0 ) return ( res < 0 ) ? (res - 3) : res;
+    if ( id != 0xD1 ) return - 3;
 
     // Accelerometer normal mode
     res = write_reg2(
@@ -78,7 +68,7 @@ int bmi160_init()
 	0x11,
 	true );
     if( res != 0 ) return res;
-    delay(50);
+    delay( 50 );
 
     // Gyroscope normal mode
     res = write_reg2(
@@ -87,7 +77,7 @@ int bmi160_init()
 	0x15,
 	true );
     if( res != 0 ) return res;
-    delay(50);
+    delay( 50 );
 
     // ACC: 100 Hz, normal BW
     res = write_reg2(
@@ -126,19 +116,19 @@ int bmi160_init()
 
 int read_bmi160_accel( AccelData& accel )
 {
-    static int16_t x, y, z;
-    static int res = bmi160_read16( BMI_ACC_X_L, x );
+    int16_t x, y, z;
+    int res = bmi160_read16( BMI_ACC_X_L, x );
     if( res != 0 ) return res;
     res = bmi160_read16( BMI_ACC_X_L + 2, y );
     if( res != 0 ) return res;
     res = bmi160_read16( BMI_ACC_X_L + 4, z );
     if( res != 0 ) return res;
-    static float x_g = x / 16384.0f;
-    static float y_g = y / 16384.0f;
-    static float z_g = z / 16384.0f;
+    float x_g = x / 16384.0f;
+    float y_g = y / 16384.0f;
+    float z_g = z / 16384.0f;
 
-    static float roll  = atan2( y_g, z_g ) * 57.2958;
-    static float pitch = atan2( -x_g, sqrt(y_g * y_g + z_g * z_g) ) * 57.2958;
+    float roll  = atan2( y_g, z_g ) * 57.2958;
+    float pitch = atan2( -x_g, sqrt(y_g * y_g + z_g * z_g) ) * 57.2958;
 
     accel = {
 	x_g,
@@ -154,23 +144,23 @@ int read_bmi160_accel( AccelData& accel )
 
 int read_bmi160_gyro( GyroData& gyro )
 {
-    static int16_t x, y, z;
-    static int res = bmi160_read16( BMI_GYR_X_L, x );
+    int16_t x, y, z;
+    int res = bmi160_read16( BMI_GYR_X_L, x );
     if( res != 0 ) return res;
     res = bmi160_read16( BMI_GYR_X_L + 2, y );
     if( res != 0 ) return res;
     res = bmi160_read16( BMI_GYR_X_L + 4, z );
     if( res != 0 ) return res;
-    static float x_dps = x / 16.4f;
-    static float y_dps = y / 16.4f;
-    static float z_dps = z / 16.4f;
+    float x_dps = x / 16.4f;
+    float y_dps = y / 16.4f;
+    float z_dps = z / 16.4f;
 
     gyro = {
 	x_dps,
 	y_dps,
 	z_dps
     };
-
+    
     return 0;
 }
 
@@ -227,7 +217,8 @@ int read_magneto( MagnetoData& magneto )
 
     res = write_reg1( I2C_QMC_ADDR, 0x02, false );
     if( res != 0 ) return res;
-    Wire.requestBytes( I2C_QMC_ADDR, 6 );
+    res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
+    if( res <= 0 ) return -1;
 
     //Read values
     {
@@ -257,46 +248,53 @@ int read_magneto( MagnetoData& magneto )
     }
     
 #else
-    write_reg1(	I2C_QMC_ADDR, 0x06, false );
-    Wire.requestFrom( I2C_QMC_ADDR, 6 );
+    res = write_reg1( I2C_QMC_ADDR, 0x06, false );
+    if( res != 0 ) return res;
+    res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
+    if( res != 0 ) return -1;
 
     //Read values
     
 
-    write_reg1( I2C_QMC_ADDR, 0x03, true );
+    res = write_reg1( I2C_QMC_ADDR, 0x03, true );
+    if( res != 0 ) return res;
 #endif
     return 0;
 }
 
 void I2CTask( void* params )
 {
-    Serial.println( "Hello 1" );
-    Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
+    // Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
+    Wire.begin();
     delay( 200 );
 
-    Serial.println( "Hello 2" );
-    bool bmi_up = bmi160_init();
-    if( !bmi_up )
+    int bmi_err = bmi160_init();
+    if( bmi_err == 0 )
     {
-	Serial.print( "Could not initialize BMI160" );
+	Serial.println( "Successfully started BMI160" );
     }
-    Serial.println( "Hello 3" );
+    else
+    {
+	Serial.printf( "Could not initialize BMI160, code: %d\n", bmi_err );
+    }
 
     // res = magneto_init();
     // if( res != 0 )
     // {
-    // 	Serial.println( "Could not initialize magnetometer, code: " );
+    // 	Serial.println( "Could not initialize QMC, code: " );
     // 	Serial.println( res );	
     // }
 
     QMC5883P qmc;
     bool qmc_up = qmc.begin();
-    Serial.println( "Hello 4" );
-    if( !qmc_up )
+    if( qmc_up )
+    {
+	Serial.println( "Successfully started QMC" );
+    }
+    else
     {
 	Serial.println( "Could not initialize QMC" );
     }
-    Serial.println( "Hello 5" );
 
     qmc.setHardIronOffsets( QMC_OFFSET_X, QMC_OFFSET_Y );
 
@@ -309,8 +307,6 @@ void I2CTask( void* params )
     float heading;
     Peripheral queue_val;
     RadioResponse resp;
-
-    Serial.println( "Hello 6" );
     
     for( ;; )
     {
@@ -319,7 +315,7 @@ void I2CTask( void* params )
 	switch( queue_val )
 	{
 	case PERI_MAGNETO:
-	    if( qmc_up )
+	    if( qmc_up && sensor_fails[0] < SENSOR_FAIL_THRESHOLD )
 	    {
 		if( qmc.readXYZ(xyz) )
 		{
@@ -328,8 +324,12 @@ void I2CTask( void* params )
 		    if( status != 0 )
 		    {
 			Serial.println( "Could not read magnetometer" );
+			sensor_fails[0] += 1;
+			if( sensor_fails[0] >= SENSOR_FAIL_THRESHOLD )
+			    Serial.println( "Magnetometer reached the sensor fail threshold" );
 			continue;
 		    }
+		    Serial.println( "Magneto success" );
 		    
 		    resp.sensor = PERI_MAGNETO;
 		    resp.data.magneto = magneto;
@@ -344,14 +344,27 @@ void I2CTask( void* params )
 	    else
 	    {
 		qmc_up = qmc.begin();
-		Serial.println( (qmc_up) ? "Successfully started QMC" : "Failed to start QMC" );
+		if( qmc_up )
+		{
+		    Serial.println( "Successfully started QMC" );
+		    sensor_fails[0] = 0;
+		}
+		else	    
+		    Serial.println( "Failed to start QMC" );
 	    }
 	    break;
 	    
 	case PERI_ACCEL:
-	    if( bmi_up )
+	    if( !bmi_err && sensor_fails[1] < SENSOR_FAIL_THRESHOLD )
 	    {
-	        read_bmi160_accel( accel );
+	        status = read_bmi160_accel( accel );
+		if( status != 0)
+		{
+		    Serial.printf( "Failed to read accelerometer, code: %d\n", status );
+		    sensor_fails[1] += 1;
+		    if( sensor_fails[1] >= SENSOR_FAIL_THRESHOLD )
+			Serial.println( "Accelerometer reached the sensor fail threshold" );
+		}
 
 		resp.sensor = PERI_ACCEL;
 		resp.data.accel = accel;
@@ -365,16 +378,29 @@ void I2CTask( void* params )
 	    }
 	    else
 	    {
-		bmi_up = !bmi160_init();
-		Serial.println( (bmi_up) ? "Successfully started BMI180" : "Failed to start BMI180" );
+		bmi_err = bmi160_init();
+		if( !bmi_err )
+		{
+		    Serial.println( "Successfully started BMI160" );
+		    sensor_fails[1] = 0;
+		}
+		else
+		    Serial.printf( "Failed to start BMI160, code: %d\n", bmi_err );
 	    }
 	
 
 	    break;
 	case PERI_GYRO:
-	    if( bmi_up )
+	    if( !bmi_err && sensor_fails[1] < SENSOR_FAIL_THRESHOLD )
 	    {
-		int res = read_bmi160_gyro( gyro );
+		status = read_bmi160_gyro( gyro );
+		if( status != 0)
+		{
+		    Serial.printf( "Failed to read gyroscope, code: %d\n", status );
+		    sensor_fails[1] += 1;
+		    if( sensor_fails[1] >= SENSOR_FAIL_THRESHOLD )
+			Serial.println( "Gyroscope reached the sensor fail threshold" );
+		}
 
 		resp.sensor = PERI_GYRO;
 		resp.data.gyro = gyro;
@@ -386,8 +412,14 @@ void I2CTask( void* params )
 	    }
 	    else
 	    {
-		bmi_up = !bmi160_init();
-		Serial.println( (bmi_up) ? "Successfully started BMI180" : "Failed to start BMI180" );
+		bmi_err = bmi160_init();
+		if( !bmi_err )
+		{
+		    Serial.println( "Successfully started BMI160" );
+		    sensor_fails[1] = 0;
+		}
+		else
+		    Serial.printf( "Failed to start BMI160, code: %d\n", bmi_err );
 	    }
 	
 

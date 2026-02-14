@@ -65,7 +65,6 @@ void setup()
     xTaskCreatePinnedToCore( I2CTask, "I2CTask", 10000, i2c_param, 1, NULL, 0 );
     // xTaskCreatePinnedToCore( UartTask, "UartTask", 10000, uart_param, 1, NULL, 0 );
     // xTaskCreatePinnedToCore( ParachuteTask, "ParachuteTask", 10000, chute_param, 2, NULL, 1 );
-    // xTaskCreatePinnedToCore( DataClockTask, "DataClockTask", 10000, clock_param, 1, NULL, 1 );
     for( int i = 0; i < NUM_SOURCES; i++ )
 	xTimerStart( timers[i], 100 );
 }
