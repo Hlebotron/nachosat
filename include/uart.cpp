@@ -40,19 +40,69 @@ void UartTask( void* params )
 
 #else
 
+int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )
+{
+    static size_t written = 0;
+    if( resp == NULL )
+	return 2;
+    
+    switch( resp->sensor )
+    {
+    case PERI_ACCEL:
+	written = radio_uart.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(AccelData)) );
+	break;
+    case PERI_GYRO:
+	written = radio_uart.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(GyroData)) );
+	break;
+    case PERI_GPS:
+	written = radio_uart.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(GPSData)) );
+	break;
+    case PERI_MAGNETO:
+	written = radio_uart.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(MagnetoData)) );
+	break;
+    case PERI_BMP:
+	written = radio_uart.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(BMPData)) );
+	break;
+    default:
+	Serial.printf( "Invalid sensor, code: %i\n", resp->sensor );
+	return 1;
+    }
+    
+    if( written == 0 )
+	return 3;
+    
+    return 0;
+}
+
+int radio_init( HardwareSerial& radio_uart )
+{
+    radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
+    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+
+    radio_uart.write( "radio rxstop\r\n" ); 			delay( 5e5 );
+    radio_uart.write( "radio set freq" );
+    radio_uart.print( RADIO_FREQ );
+    radio_uart.write( "\r\n" );					delay( 5e5 );
+    radio_uart.write( "radio set mod lora\r\n" ); 		delay( 5e5 );
+    radio_uart.write( "radio set sf sf7\r\n" ); 		delay( 5e5 );
+    radio_uart.write( "radio set bw 125\r\n" ); 		delay( 5e5 );
+    radio_uart.write( "radio set pa off\r\n" ); 		delay( 5e5 );
+    radio_uart.write( "radio set pwr 10\r\n" ); 		delay( 5e5 );
+    radio_uart.write( "radio rxstop\r\n" ); 			delay( 5e5 );
+    radio_uart.write( "radio rx 0\r\n" ); 			delay( 5e5 );
+}
+
 void UartTask( void* params )
 {
     HardwareSerial radio_uart( 1 );
-    radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
+    radio_init( radio_uart );
 
     xQueueAddToSet( uart_in_sem, uart_set );
     xQueueAddToSet( uart_out_drq, uart_set );
-    
-    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
 
     *( BaseType_t* ) params = 3;
     QueueSetMemberHandle_t member;
-    struct RadioResponse resp;
+    RadioResponse resp;
     for( ;; )
     {
 	member = xQueueSelectFromSet( uart_set, ( 1000 MS ) );
@@ -68,26 +118,7 @@ void UartTask( void* params )
 	else if( member == uart_out_drq ) //If we want to send something
 	{
 	    BaseType_t res = xQueueReceive( uart_out_drq, (void*) &resp, TICKS_TO_WAIT );
-	    switch( resp.sensor )
-	    {
-	    case PERI_ACCEL:
-		radio_uart.write( (uint8_t*) &resp, (sizeof(Peripheral) + sizeof(AccelData)) );
-		break;
-	    case PERI_GYRO:
-		radio_uart.write( (uint8_t*) &resp, (sizeof(Peripheral) + sizeof(GyroData)) );
-		break;
-	    case PERI_GPS:
-		radio_uart.write( (uint8_t*) &resp, (sizeof(Peripheral) + sizeof(GPSData)) );
-		break;
-	    case PERI_MAGNETO:
-		radio_uart.write( (uint8_t*) &resp, (sizeof(Peripheral) + sizeof(MagnetoData)) );
-		break;
-	    case PERI_BMP:
-		radio_uart.write( (uint8_t*) &resp, (sizeof(Peripheral) + sizeof(BMPData)) );
-		break;
-	    default:
-		Serial.printf( "Invalid sensor, code: %i\n", resp.sensor );
-	    }
+	    write_radio( radio_uart, &resp );
 	}
 	else
 	{

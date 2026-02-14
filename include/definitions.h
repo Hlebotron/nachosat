@@ -48,7 +48,15 @@ struct RadioResponse
 {
     enum Peripheral	sensor;
     union PeriData	data;
-}; 
+};
+
+enum i2c_error
+{
+    I2C_OK = 0,
+    I2C_ERR_NACK_ADDR_TRANSMIT = 2,
+    I2C_ERR_NACK_DATA_TRANSMIT = 3,
+    I2C_ERR_LINE_BUSY = 4
+};
 
 #define BMI_CHIP_ID   			( 0x00 )
 #define BMI_CMD       			( 0x7E )

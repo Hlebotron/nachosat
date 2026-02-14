@@ -4,9 +4,9 @@
 #include "config.h"
 #include "definitions.h"
 
-QueueHandle_t spi_drq = xQueueCreate( SPI_DRQ_LEN, sizeof(enum Peripheral) );
-QueueHandle_t i2c_drq = xQueueCreate( I2C_DRQ_LEN, sizeof(enum Peripheral) );
-QueueHandle_t uart_out_drq = xQueueCreate( UART_OUT_LEN, sizeof(struct RadioResponse) );
+QueueHandle_t spi_drq = xQueueCreate( SPI_DRQ_LEN, sizeof(Peripheral) );
+QueueHandle_t i2c_drq = xQueueCreate( I2C_DRQ_LEN, sizeof(Peripheral) );
+QueueHandle_t uart_out_drq = xQueueCreate( UART_OUT_LEN, sizeof(RadioResponse) );
 SemaphoreHandle_t uart_in_sem = xSemaphoreCreateBinary();
 
 /* Corresponds to:
@@ -34,7 +34,7 @@ TimerHandle_t timers[ NUM_SOURCES ];
 // }
 void TimerCallback( TimerHandle_t timer )
 {
-    enum Peripheral sensor;
+    Peripheral sensor;
     
     switch( (uint32_t) pvTimerGetTimerID(timer) )
     {

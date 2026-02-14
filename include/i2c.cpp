@@ -121,7 +121,7 @@ int bmi160_init()
 	true );
     if( res != 0 ) return res;
 
-    return true;
+    return 0;
 }
 
 int read_bmi160_accel( AccelData& accel )
@@ -243,8 +243,8 @@ int read_magneto( MagnetoData& magneto )
 	    switch( i / 2 )
 	    {
 	    case 1:
-		magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X
-		    break;
+		magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X;
+		break;
 	    case 2:
 		magneto.z = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
 		break;
@@ -257,7 +257,7 @@ int read_magneto( MagnetoData& magneto )
     }
     
 #else
-    write_reg1(	I2C_QMC_ADDR, 0x06,	false );
+    write_reg1(	I2C_QMC_ADDR, 0x06, false );
     Wire.requestFrom( I2C_QMC_ADDR, 6 );
 
     //Read values
@@ -270,14 +270,17 @@ int read_magneto( MagnetoData& magneto )
 
 void I2CTask( void* params )
 {
-
+    Serial.println( "Hello 1" );
     Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
+    delay( 200 );
 
+    Serial.println( "Hello 2" );
     bool bmi_up = bmi160_init();
     if( !bmi_up )
     {
 	Serial.print( "Could not initialize BMI160" );
     }
+    Serial.println( "Hello 3" );
 
     // res = magneto_init();
     // if( res != 0 )
@@ -288,10 +291,13 @@ void I2CTask( void* params )
 
     QMC5883P qmc;
     bool qmc_up = qmc.begin();
+    Serial.println( "Hello 4" );
     if( !qmc_up )
     {
 	Serial.println( "Could not initialize QMC" );
     }
+    Serial.println( "Hello 5" );
+
     qmc.setHardIronOffsets( QMC_OFFSET_X, QMC_OFFSET_Y );
 
     float roll, pitch;
@@ -301,8 +307,10 @@ void I2CTask( void* params )
     int status;
     float xyz[3];
     float heading;
-    enum Peripheral queue_val;
-    struct RadioResponse resp;
+    Peripheral queue_val;
+    RadioResponse resp;
+
+    Serial.println( "Hello 6" );
     
     for( ;; )
     {

@@ -6,7 +6,7 @@
 extern QueueHandle_t spi_drq;
 extern QueueHandle_t uart_out_drq;
 
-int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, struct BMPData& data )
+int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, BMPData& data )
 {
     if( bmp_temp == NULL )
 	return 1;
@@ -47,23 +47,24 @@ void SpiTask( void* params )
     Adafruit_Sensor* bmp_press = bmp.getPressureSensor();
 
     /* Default settings from datasheet. */
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-		    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-		    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-		    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-		    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    bmp.setSampling( Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+		     Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+		     Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+		     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+		     Adafruit_BMP280::STANDBY_MS_500 ); /* Standby time. */
     
 
     BMPData data = { -500.0, -500.0 };
 
-    enum Peripheral queue_val;
-    struct RadioResponse resp;
+    Peripheral queue_val;
+    RadioResponse resp;
     
     for( ;; )
     {
 	xQueueReceive( spi_drq, &queue_val, portMAX_DELAY );
 	//TODO: If BMP remains the only SPI device outside of the SD card reader, then remove the switch case and replace the queue it with a counting semaphore
-	switch( queue_val ) {
+	switch( queue_val )
+	{
 	case PERI_BMP:
 	    if( bmp_up )
 	    {
