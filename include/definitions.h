@@ -76,17 +76,24 @@ enum i2c_error
 #define BMP_MIN_RES_BITS		( 16 )
 #define BMP_MAX_RES_BITS		( 20 )
 
+#define QMC_SIGN_REG_ADDR		( 0x29 )
+/* #define QMC_FREQ_REG_ADDR		( 0x00 ) */
+/* #define QMC_GAIN_REG_ADDR		( 0x01 ) */
+/* #define QMC_MODE_REG_ADDR		( 0x02 ) */
+#define QMC_RS_REG_ADDR			( 0x0B )
+#define QMC_MODE_REG_ADDR		( 0x0A )
 
-#define QMC_FREQ_REG_ADDR		( 0x00 )
-#define QMC_GAIN_REG_ADDR		( 0x01 )
-#define QMC_MODE_REG_ADDR		( 0x02 )
-
-#define QMC_FREQ_REG_VALUE		( 0x70 )
-#define QMC_GAIN_REG_VALUE		( 0xA0 )
+#define QMC_SIGN_REG_VALUE		( 0x06 )
+#define QMC_RS_REG_VALUE		( 0x08 )
+/* #define QMC_FREQ_REG_VALUE		( 0x70 ) */
+/* #define QMC_GAIN_REG_VALUE		( 0xA0 ) */
 #ifdef QMC_SINGLE_READ
-#define QMC_MODE_REG_VALUE		( 0x01 )
+/* #define QMC_MODE_REG_VALUE		( 0x01 ) */
+
+#define QMC_MODE_REG_VALUE		( 0xCD )
 #else
-#define QMC_MODE_REG_VALUE		( 0x00 )
+/* #define QMC_MODE_REG_VALUE		( 0x00 ) */
+#define QMC_MODE_REG_VALUE		( 0xC3 )
 #endif
 /* #define QMC_ */
 

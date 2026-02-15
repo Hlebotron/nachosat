@@ -73,7 +73,11 @@ int read_bmi160_gyro( GyroData& gyro );
     @return		0: 	OK
   			-1: 	failed to write addr (Wire.write)
 			-2: 	failed to write val (Wire.write)
-			Everything else is the result of bmi160_read16()
+			1: 	data too long to fit in transmit buffer (Wire.endTransmission)
+			2: 	received NACK on transmit of address (Wire.endTransmission)
+			3: 	received NACK on transmit of data (Wire.endTransmission)
+			4: 	other error (Wire.endTransmission)
+			5: 	timeout (Wire.endTransmission)
  */
 int write_reg1( uint8_t dev_addr, uint8_t val, bool endstop );
 
@@ -105,8 +109,9 @@ int magneto_init();
   @brief 		Read the QMC5883P
   @param magneto	Where the magnetometer data will be stored
   @return		0: 	OK
-  			-1: 	Wire.requestFrom() failed
-			Everything else is the result of write_reg1()
+  			-3: 	Wire.requestFrom() failed
+			-4:	Wire.available() failed (no data available)
+			Everything else is the result of write_reg1() and write_reg2()
  */
 int read_magneto( MagnetoData& magneto );
 

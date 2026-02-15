@@ -171,15 +171,15 @@ int magneto_init()
     //8-average, 15 Hz default, normal measurement
     res = write_reg2(
 	I2C_QMC_ADDR,
-	QMC_FREQ_REG_ADDR,
-	QMC_FREQ_REG_VALUE,
+	QMC_SIGN_REG_ADDR,
+	QMC_SIGN_REG_VALUE,
 	true );
     if( res != 0 ) return res;
 
     res = write_reg2(
 	I2C_QMC_ADDR,
-	QMC_GAIN_REG_ADDR,
-	QMC_GAIN_REG_VALUE,
+	QMC_RS_REG_ADDR,
+	QMC_RS_REG_VALUE,
 	true );
     if( res != 0 ) return res;
 
@@ -204,11 +204,11 @@ int magneto_init()
     return 0;
 }
 
-int read_magneto( MagnetoData& magneto )
+int read_magneto( QMC5883P& qmc, MagnetoData& magneto )
 {
     int res;
-#ifdef MAGNETO_SINGLE
-    res = write_reg2( I2C_QMC_ADDR, QMC_MODE_REG_ADDR,	QMC_MODE_REG_VALUE, true );
+#ifdef QMC_SINGLE_READ
+    res = write_reg2( I2C_QMC_ADDR, QMC_MODE_REG_ADDR, QMC_MODE_REG_VALUE, true );
     if( res != 0 ) return res;
     // write_reg2(	I2C_QMC_ADDR, QMC_MODE_REG_ADDR,	QMC_MODE_REG_VALUE, true );
 
@@ -218,12 +218,20 @@ int read_magneto( MagnetoData& magneto )
     res = write_reg1( I2C_QMC_ADDR, 0x02, false );
     if( res != 0 ) return res;
     res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
-    if( res <= 0 ) return -1;
+    if( res <= 0 ) return -3;
 
     //Read values
+    bool read_failed = true;
+    for( int i = 0; i < SENSOR_FAIL_THRESHOLD; i++ )
     {
+	if( !Wire.available() )
+	{
+	    vTaskDelay( TICKS_TO_WAIT );
+	    continue;
+	}
+	    
 	uint8_t val = 0;
-	for( int i = 1; i < 7; i++ )
+	for( int i = 1; i <= 6; i++ )
 	{
 	    if( i % 2 == 1 )
 	    {
@@ -237,15 +245,19 @@ int read_magneto( MagnetoData& magneto )
 		magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X;
 		break;
 	    case 2:
-		magneto.z = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
+		magneto.z = ( Wire.read() << 8 ) | val;
 		break;
 	    case 3:
-		magneto.y = ( Wire.read() << 8 ) | val;
+		magneto.y = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
 		break;
 	    }
 	    magneto.head = fmod( qmc.getHeadingDeg(QMC_DECL_ANGLE) + QMC_ANGLE_OFFSET, 360.0 );
 	}
+	read_failed = false;
+	break;
     }
+
+    if( read_failed ) return -4;
     
 #else
     res = write_reg1( I2C_QMC_ADDR, 0x06, false );
@@ -259,6 +271,7 @@ int read_magneto( MagnetoData& magneto )
     res = write_reg1( I2C_QMC_ADDR, 0x03, true );
     if( res != 0 ) return res;
 #endif
+    
     return 0;
 }
 
@@ -320,16 +333,15 @@ void I2CTask( void* params )
 		if( qmc.readXYZ(xyz) )
 		{
 
-		    status = read_magneto( magneto );
+		    status = read_magneto( qmc, magneto );
 		    if( status != 0 )
 		    {
-			Serial.println( "Could not read magnetometer" );
+			Serial.printf( "Could not read magnetometer, code: %d\n", status );
 			sensor_fails[0] += 1;
 			if( sensor_fails[0] >= SENSOR_FAIL_THRESHOLD )
 			    Serial.println( "Magnetometer reached the sensor fail threshold" );
 			continue;
 		    }
-		    Serial.println( "Magneto success" );
 		    
 		    resp.sensor = PERI_MAGNETO;
 		    resp.data.magneto = magneto;
