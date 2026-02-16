@@ -164,116 +164,109 @@ int read_bmi160_gyro( GyroData& gyro )
     return 0;
 }
 
-int magneto_init()
-{
-    int res;
-    //According to documentation:
-    //8-average, 15 Hz default, normal measurement
-    res = write_reg2(
-	I2C_QMC_ADDR,
-	QMC_SIGN_REG_ADDR,
-	QMC_SIGN_REG_VALUE,
-	true );
-    if( res != 0 ) return res;
+// int magneto_init()
+// {
+//     int res;
+//     //According to documentation:
+//     //8-average, 15 Hz default, normal measurement
+//     res = write_reg2(
+// 	I2C_QMC_ADDR,
+// 	QMC_SIGN_REG_ADDR,
+// 	QMC_SIGN_REG_VALUE,
+// 	true );
+//     if( res != 0 ) return res;
 
-    res = write_reg2(
-	I2C_QMC_ADDR,
-	QMC_RS_REG_ADDR,
-	QMC_RS_REG_VALUE,
-	true );
-    if( res != 0 ) return res;
+//     res = write_reg2(
+// 	I2C_QMC_ADDR,
+// 	QMC_RS_REG_ADDR,
+// 	QMC_RS_REG_VALUE,
+// 	true );
+//     if( res != 0 ) return res;
 
 
-#ifndef MAGNETO_SINGLE
-    //Continuous-measurement mode
-    res = write_reg2(
-	I2C_QMC_ADDR,
-	QMC_MODE_REG_ADDR,
-	QMC_MODE_REG_VALUE,
-	true );
-    if( res != 0 ) return res;
+// #ifndef MAGNETO_SINGLE
+//     //Continuous-measurement mode
+//     res = write_reg2(
+// 	I2C_QMC_ADDR,
+// 	QMC_MODE_REG_ADDR,
+// 	QMC_MODE_REG_VALUE,
+// 	true );
+//     if( res != 0 ) return res;
 
-    //Options:
-    //1. Wait 6ms
-    //2. Monitor status register (poll if I understand correctly)
-    //3. Use DRDY hardware interrupt pin
-    //Eventually it will be option 3, but for now it's option 1
-    delay( 6 MS );
-#endif
+//     //Options:
+//     //1. Wait 6ms
+//     //2. Monitor status register (poll if I understand correctly)
+//     //3. Use DRDY hardware interrupt pin
+//     //Eventually it will be option 3, but for now it's option 1
+//     delay( 6 MS );
+// #endif
     
-    return 0;
-}
+//     return 0;
+// }
 
-int read_magneto( QMC5883P& qmc, MagnetoData& magneto )
-{
-    int res;
-#ifdef QMC_SINGLE_READ
-    res = write_reg2( I2C_QMC_ADDR, QMC_MODE_REG_ADDR, QMC_MODE_REG_VALUE, true );
-    if( res != 0 ) return res;
-    // write_reg2(	I2C_QMC_ADDR, QMC_MODE_REG_ADDR,	QMC_MODE_REG_VALUE, true );
+// int read_magneto( QMC5883P& qmc, MagnetoData& magneto )
+// {
+//     int res;
+// #ifdef QMC_SINGLE_READ
+//     // res = write_reg2( I2C_QMC_ADDR, QMC_MODE_REG_ADDR, QMC_MODE_REG_VALUE, true );
+//     // if( res != 0 ) return res;
+//     // // write_reg2(	I2C_QMC_ADDR, QMC_MODE_REG_ADDR,	QMC_MODE_REG_VALUE, true );
 
-    //Switch to option 3
-    delay( 6 MS );
+//     // //Switch to option 3
+//     // delay( 6 MS );
 
-    res = write_reg1( I2C_QMC_ADDR, 0x02, false );
-    if( res != 0 ) return res;
-    res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
-    if( res <= 0 ) return -3;
+//     // res = write_reg1( I2C_QMC_ADDR, 0x02, false );
+//     // if( res != 0 ) return res;
+//     // res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
+//     // if( res <= 0 ) return -3;
 
-    //Read values
-    bool read_failed = true;
-    for( int i = 0; i < SENSOR_FAIL_THRESHOLD; i++ )
-    {
-	if( !Wire.available() )
-	{
-	    vTaskDelay( TICKS_TO_WAIT );
-	    continue;
-	}
-	    
-	uint8_t val = 0;
-	for( int i = 1; i <= 6; i++ )
-	{
-	    if( i % 2 == 1 )
-	    {
-		val = Wire.read();
-		continue;
-	    }
+//     //Read values
+//     // {
+//     // 	uint8_t val = 0;
+// 	// for( int i = 1; i <= 6; i++ )
+// 	// {
+// 	//     if( i % 2 == 1 )
+// 	//     {
+// 	// 	val = Wire.read();
+// 	// 	continue;
+// 	//     }
 
-	    switch( i / 2 )
-	    {
-	    case 1:
-		magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X;
-		break;
-	    case 2:
-		magneto.z = ( Wire.read() << 8 ) | val;
-		break;
-	    case 3:
-		magneto.y = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
-		break;
-	    }
-	    magneto.head = fmod( qmc.getHeadingDeg(QMC_DECL_ANGLE) + QMC_ANGLE_OFFSET, 360.0 );
-	}
-	read_failed = false;
-	break;
-    }
-
-    if( read_failed ) return -4;
+// 	//     switch( i / 2 )
+// 	//     {
+// 	//     case 1:
+// 	// 	magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X;
+// 	// 	break;
+// 	//     case 2:
+// 	// 	magneto.z = ( Wire.read() << 8 ) | val;
+// 	// 	break;
+// 	//     case 3:
+// 	// 	magneto.y = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
+// 	// 	break;
+// 	//     }
+// 	// }
+// 	res = qmc.readXYZ( QMC_DECL_ANGLE );
+// 	if( !res ) return -3;
+// 	magneto.x = xyz[0];
+// 	magneto.y = xyz[1];
+// 	magneto.z = xyz[2];
+// 	magneto.head = fmod( qmc.getHeadingDeg(QMC_DECL_ANGLE) + QMC_ANGLE_OFFSET, 360.0 );
+//     // }
     
-#else
-    res = write_reg1( I2C_QMC_ADDR, 0x06, false );
-    if( res != 0 ) return res;
-    res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
-    if( res != 0 ) return -1;
+// #else
+//     res = write_reg1( I2C_QMC_ADDR, 0x06, false );
+//     if( res != 0 ) return res;
+//     res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
+//     if( res != 0 ) return -1;
 
-    //Read values
+//     //Read values
     
 
-    res = write_reg1( I2C_QMC_ADDR, 0x03, true );
-    if( res != 0 ) return res;
-#endif
+//     res = write_reg1( I2C_QMC_ADDR, 0x03, true );
+//     if( res != 0 ) return res;
+// #endif
     
-    return 0;
-}
+//     return 0;
+// }
 
 void I2CTask( void* params )
 {
@@ -330,28 +323,26 @@ void I2CTask( void* params )
 	case PERI_MAGNETO:
 	    if( qmc_up && sensor_fails[0] < SENSOR_FAIL_THRESHOLD )
 	    {
-		if( qmc.readXYZ(xyz) )
+		status = qmc.readXYZ( xyz );
+		if( !status )
 		{
-
-		    status = read_magneto( qmc, magneto );
-		    if( status != 0 )
-		    {
-			Serial.printf( "Could not read magnetometer, code: %d\n", status );
-			sensor_fails[0] += 1;
-			if( sensor_fails[0] >= SENSOR_FAIL_THRESHOLD )
-			    Serial.println( "Magnetometer reached the sensor fail threshold" );
-			continue;
-		    }
-		    
-		    resp.sensor = PERI_MAGNETO;
-		    resp.data.magneto = magneto;
-		    xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
-		    
-		    Serial.printf( "Magneto x: %i\n", magneto.x );
-		    Serial.printf( "Magneto y: %i\n", magneto.y );
-		    Serial.printf( "Magneto z: %i\n", magneto.z );
-		    Serial.printf( "Magneto head: %i\n", magneto.head );
+		    Serial.println( "Could not read magnetometer xyz" );
+		    sensor_fails[0] += 1;
+		    if( sensor_fails[0] >= SENSOR_FAIL_THRESHOLD )
+			Serial.println( "Magnetometer reached the sensor fail threshold" );
+		    continue;
 		}
+
+		magneto.head = qmc.getHeadingDeg( QMC_DECL_ANGLE );
+		    
+		resp.sensor = PERI_MAGNETO;
+		resp.data.magneto = magneto;
+		xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+		    
+		Serial.printf( "Magneto x: %i\n", xyz[0] );
+		Serial.printf( "Magneto y: %i\n", xyz[1] );
+		Serial.printf( "Magneto z: %i\n", xyz[2] );
+		Serial.printf( "Magneto head: %i\n", magneto.head );
 	    }
 	    else
 	    {
