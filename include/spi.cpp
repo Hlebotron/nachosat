@@ -37,7 +37,7 @@ void SpiTask( void* params )
     if( !bmp_up )
     {
 	Serial.printf( "Could not start BMP280, sensor ID: 0x%X\n", bmp.sensorID() );
-	Serial.println( "Expected SensorID for BMP280: 0x56-0x58\n" );
+	// Serial.println( "Expected SensorID for BMP280: 0x56-0x58\n" );
     }
     else
     {
@@ -103,7 +103,7 @@ void SpiTask( void* params )
 		else
 		{
 		    Serial.printf( "Failed to start BMP280, sensor ID: 0x%X\n", bmp.sensorID() );
-		    Serial.println( "Expected SensorID for BMP280: 0x56-0x58" );
+		    // Serial.println( "Expected SensorID for BMP280: 0x56-0x58" );
 		}
 	    }
 	    break;
