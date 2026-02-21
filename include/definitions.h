@@ -97,7 +97,7 @@ enum i2c_error
 #endif
 /* #define QMC_ */
 
-#define I2C_BMP_ADDR			( 0x76 )
+/* #define I2C_BMP_ADDR			( 0x76 ) */
 #define I2C_BMI_ADDR			( 0x69 )
 #define I2C_QMC_ADDR			( 0x2C )
 

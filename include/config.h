@@ -2,7 +2,7 @@
 #define SPI_MOSI 			( 23 ) //BMP: SDA
 #define SPI_SCK 			( 18 ) //BMP: SCL
 
-#define SPI_BMP_SS			( 15 ) //BMP: CSB
+#define SPI_BMP_SS			( 25 ) //BMP: CSB
 #define SPI_SD_SS			( 16 )
 
 #define I2C_SDA				( 21 )
@@ -38,3 +38,4 @@
 #define DEFAULT_DATA_REQUEST_INTERVAL	( 5000 MS )
 #define TICKS_TO_WAIT			( 10 )
 #define SENSOR_FAIL_THRESHOLD		( 10 )
+#define DEBUG_BAUD			( 115200 )

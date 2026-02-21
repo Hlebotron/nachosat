@@ -15,9 +15,8 @@ int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, BMPD
     
     sensors_event_t temp_event, pressure_event;
     
-    bmp_temp->getEvent(&temp_event);
-    bmp_pressure->getEvent(&pressure_event);
-
+    if( !bmp_temp->getEvent(&temp_event) ) return 3;
+    if( !bmp_pressure->getEvent(&pressure_event) ) return 4;
 
     data = { temp_event.temperature, pressure_event.pressure };
     return 0;
@@ -37,12 +36,14 @@ void SpiTask( void* params )
     unsigned bmp_up = bmp.begin();
     if( !bmp_up )
     {
-	Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
-			 "try a different address!"));
-	Serial.print( "Error code: " ); Serial.println( bmp_up );
-	Serial.print("SensorID was: 0x"); Serial.println(bmp.sensorID(),16);
-	Serial.println("Expected SensorID for BMP280: 0x56-0x58\n");
+	Serial.printf( "Could not start BMP280, sensor ID: 0x%X\n", bmp.sensorID() );
+	Serial.println( "Expected SensorID for BMP280: 0x56-0x58\n" );
     }
+    else
+    {
+	Serial.println( "Successfully started BMP280" );
+    }
+
     Adafruit_Sensor* bmp_temp = bmp.getTemperatureSensor();
     Adafruit_Sensor* bmp_press = bmp.getPressureSensor();
 
@@ -77,18 +78,33 @@ void SpiTask( void* params )
 	    case 2:
 		Serial.println( "BMP Read Error: bmp_pressure is null" );	    
 		continue;
+	    case 3:
+		Serial.println( "BMP Read Error: Could not read temperature" );	    
+		continue;
+	    case 4:
+		Serial.println( "BMP Read Error: Could not read pressure" );	    
+		continue;
 	    }
 	    
 	    resp.sensor = PERI_BMP;
 	    resp.data.bmp = { data.temp, data.pressure };
 	    xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
-	    Serial.printf(  "\nTemp: %f\n", data.temp );
-	    Serial.printf(  "Pressure: %f\n", data.pressure );
+	    Serial.printf( "\nTemp: %f\n", data.temp );
+	    Serial.printf( "Pressure: %f\n", data.pressure );
 	    }
 	    else
 	    {
 		bmp_up = bmp.begin();
-		Serial.println( (bmp_up) ? "Successfully started BMP280" : "Failed to start BMP280" );
+		if( bmp_up )
+		{
+		    Serial.println( "Successfully started BMP280" );
+		    // sensor_fails[0] = 0;
+		}
+		else
+		{
+		    Serial.printf( "Failed to start BMP280, sensor ID: 0x%X\n", bmp.sensorID() );
+		    Serial.println( "Expected SensorID for BMP280: 0x56-0x58" );
+		}
 	    }
 	    break;
 	default:
