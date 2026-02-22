@@ -1,6 +1,10 @@
 #include <HardwareSerial.h>
+// #include <cbuf.cpp>
 
+#include "config.h"
+#include "definitions.h"
 #define GROUND
+
 #include "uart.cpp"
 
 // QueueHandle_t queue_from_uart = xQueueCreate( QUEUE_LEN, sizeof(RadioResponse) );
@@ -28,14 +32,14 @@ void SerialTask( void* params )
     // xQueueAddToSet( serial_sem, queue_set );
     // xQueueAddToSet( queue_from_uart, queue_set );
     
-    Serial.begin( 115200 );
+    Serial.begin( UART_SERIAL_BAUD );
 
-    *((BaseType_t*) params) = 1; //Set status of this task
+    *( (BaseType_t*) params ) = 1; //Set status of this task
 
     char radio_rx_buf[ STREAM_BUF_LEN ];
     char radio_tx_buf[ STREAM_BUF_LEN ];
 
-    BaseType_t prev = *((BaseType_t*) params);
+    BaseType_t prev = *( (BaseType_t*) params );
     Serial.print( "\nUART task starting" );
     while( *((BaseType_t*) params) != 3 )
     {
@@ -47,12 +51,43 @@ void SerialTask( void* params )
 	delay( 200 );
     }
     Serial.println( "\nUART task started" );
+
+    size_t
+	read_available = 0,
+	write_available = 0,
+	write_available_tmp = 0,
+	read_count = 0,
+	write_count = 0;
     for( ;; )
     {
-	// xQueueReceive( queue_set, portMAX_DELAY );
-	if( xStreamBufferReceive( stream,  ) > 0 )
+	if( xStreamBufferReceive(stream, radio_rx_buf, sizeof(radio_rx_buf), 0) > 0 ) // Receiving data from the radio
+	{
+	    
+	}
+	
+	read_available = Serial.available();
+	if( read_available > 0 ) // Receiving data from the laptop
+	{
+	    read_count = Serial.readBytes( radio_tx_buf, read_available );
+	    if( read_count != read_available )
+		Serial.printf( "Warning: Read %d bytes, expected %d\n", read_count, read_available );
+	    read_available = 0;
+	}
 
-	// Serial.print( "pog" );
+	// The upload code should be received 3 times to switch to upload mode (to upload code to the ESP32)
+
+	// Why not just merge the UartTask and the SerialTask if the ground station is just a proxy?
+	// Why does the ground station require software at all? Why not just use a USB-Serial converter? Perhaps for the sake of flexibility?
+	write_available_tmp = radio_uart.availableForWrite();
+	write_available = (write_available_tmp < write_count) ? write_available_tmp : write_count;
+	if( write_available > 0 ) // Sending data to the radio
+	{
+	    size_t written = radio_uart.write( radio_tx_buf, write_available ); // Actually write
+	    if( written != write_available ) 
+		Serial.printf( "Warning: Wrote %d bytes, expected write of %d bytes\n", written, write_available );
+	    // What should be done if the write buffer fills up? Should the radio_tx_buf and read buffer be allowed to fill up?
+	    // What should be done to the buffer after it has been written from?
+	}
     }
 }
 

@@ -55,12 +55,12 @@ void TimerCallback( TimerHandle_t timer )
 
 void setup()
 {
-    Serial.begin( DEBUG_BAUD );
+    Serial.begin( UART_SERIAL_BAUD );
 
     for( int i = 0; i < NUM_SOURCES; i++ )
 	timers[ i ] = xTimerCreate( "timer", DEFAULT_DATA_REQUEST_INTERVAL, pdTRUE, (void*) i, TimerCallback );
 
-    pinMode( TEST_PIN, OUTPUT);
+    // pinMode( TEST_PIN, OUTPUT);
 
     int *spi_param, *i2c_param, *chute_param, *clock_param, *uart_param;
     xTaskCreatePinnedToCore( SpiTask, "SpiTask", 10000, spi_param, 1, NULL, 0 );

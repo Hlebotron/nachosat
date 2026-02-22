@@ -35,12 +35,14 @@
 #define UART_RADIO_RX 			( 16 )
 #define UART_RADIO_TX 			( 17 )
 
+#define UART_SERIAL_BAUD		( 115200 )
+
 #define RADIO_FREQ			( 868e6 )
 
 #define DEFAULT_DATA_REQUEST_INTERVAL	( 10000 MS )
 #define TICKS_TO_WAIT			( 10 )
 #define SENSOR_FAIL_THRESHOLD		( 10 )
-#define DEBUG_BAUD			( 115200 )
+
 #define TEST_PIN			( 33 )
 #define STREAM_BUF_LEN			( 1024 )
 #define STREAM_BUF_TRIG			( 4 )
