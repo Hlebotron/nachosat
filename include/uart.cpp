@@ -11,35 +11,6 @@ void uart_irq()
     portYIELD_FROM_ISR( higher_priority_task_woken );
 }
 
-#ifdef GROUND
-
-void UartTask( void* params )
-{
-    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
-    HardwareSerial radio_uart( 1 );
-
-    radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
-    *( BaseType_t* ) params = 3;
-    String str;
-    BaseType_t str_len = 0;
-    for( ;; )
-    {
-	//Forward all messages
-	while( radio_uart.available() > 0 )
-	    Serial.print( radio_uart.read() );
-	Serial.println();
-
-	while( radio_uart.availableForWrite() >= sizeof("General Kenobi") )
-	{
-	    radio_uart.println( "General Kenobi" );
-	    delay( 1000 );
-	}
-
-    }
-}
-
-#else
-
 int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )
 {
     static size_t written = 0;
@@ -92,6 +63,95 @@ int radio_init( HardwareSerial& radio_uart )
     radio_uart.write( "radio rx 0\r\n" ); 			delay( 5e5 );
     return 0;
 }
+
+#ifdef GROUND
+
+// void UartTask( void* params )
+// {
+//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+//     HardwareSerial radio_uart( 1 );
+
+//     radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
+//     *( BaseType_t* ) params = 3;
+//     String str;
+//     BaseType_t str_len = 0;
+//     for( ;; )
+//     {
+// 	//Forward all messages
+// 	while( radio_uart.available() > 0 )
+// 	    Serial.print( radio_uart.read() );
+// 	Serial.println();
+
+// 	while( radio_uart.availableForWrite() >= sizeof("General Kenobi") )
+// 	{
+// 	    radio_uart.println( "General Kenobi" );
+// 	    delay( 1000 );
+// 	}
+
+//     }
+// }
+void UartTask( void* params )
+{
+    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+    HardwareSerial radio_uart( 1 );
+    
+    // //Create the queue set
+    // static QueueSetHandle_t queue_set = xQueueCreateSet( QUEUE_LEN + 1 ); //Length of data_response_queue + serial_sem
+    // xQueueAddToSet( serial_sem, queue_set );
+    // xQueueAddToSet( queue_from_uart, queue_set );
+    
+    Serial.begin( UART_SERIAL_BAUD );
+    radio_uart.begin( UART_RADIO_BAUD );
+
+    
+
+    *( (BaseType_t*) params ) = 1; //Set status of this task
+
+    char radio_rx_buf[ STREAM_BUF_LEN ];
+    char radio_tx_buf[ STREAM_BUF_LEN ];
+
+    size_t
+	read_available = 0,
+	write_available = 0,
+	write_available_tmp = 0,
+	read_count = 0,
+	write_count = 0;
+    for( ;; )
+    {
+	if( xStreamBufferReceive(stream, radio_rx_buf, sizeof(radio_rx_buf), 0) > 0 ) // Receiving data from the radio
+	{
+	    
+	}
+	
+	read_available = Serial.available();
+	if( read_available > 0 ) // Receiving data from the laptop
+	{
+	    read_count = Serial.readBytes( radio_tx_buf, read_available );
+	    if( read_count != read_available )
+		Serial.printf( "Warning: Read %d bytes, expected %d\n", read_count, read_available );
+	    read_available = 0;
+	}
+
+	// The upload code should be received 3 times to switch to upload mode (to upload code to the ESP32)
+
+	// Why not just merge the UartTask and the SerialTask if the ground station is just a proxy?
+	// Why does the ground station require software at all? Why not just use a USB-Serial converter? Perhaps for the sake of flexibility?
+	write_available_tmp = radio_uart.availableForWrite();
+	write_available = (write_available_tmp < write_count) ? write_available_tmp : write_count;
+	if( write_available > 0 ) // Sending data to the radio
+	{
+	    size_t written = radio_uart.write( radio_tx_buf, write_available ); // Actually write
+	    if( written != write_available ) 
+		Serial.printf( "Warning: Wrote %d bytes, expected write of %d bytes\n", written, write_available );
+	    // What should be done to the buffer after it has been written from? Move all the elements to the beginning? Does UART track buffer positions?
+	}
+    }
+}
+
+
+#else
+
+
 
 void UartTask( void* params )
 {

@@ -5,8 +5,6 @@
 #include "definitions.h"
 #define GROUND
 
-#include "uart.cpp"
-
 // QueueHandle_t queue_from_uart = xQueueCreate( QUEUE_LEN, sizeof(RadioResponse) );
 // QueueHandle_t queue_from_serial = xQueueCreate( QUEUE_LEN, sizeof(RadioRequest) );
 
@@ -14,6 +12,8 @@ SemaphoreHandle_t serial_sem = xSemaphoreCreateBinary();
 SemaphoreHandle_t uart_sem = xSemaphoreCreateBinary();
 
 StreamBufferHandle_t stream = xStreamBufferCreate( STREAM_BUF_LEN, STREAM_BUF_TRIG );
+
+#include "uart.cpp"
 
 void IdleHook()
 {
@@ -85,8 +85,7 @@ void SerialTask( void* params )
 	    size_t written = radio_uart.write( radio_tx_buf, write_available ); // Actually write
 	    if( written != write_available ) 
 		Serial.printf( "Warning: Wrote %d bytes, expected write of %d bytes\n", written, write_available );
-	    // What should be done if the write buffer fills up? Should the radio_tx_buf and read buffer be allowed to fill up?
-	    // What should be done to the buffer after it has been written from?
+	    // What should be done to the buffer after it has been written from? Move all the elements to the beginning? Does UART track buffer positions?
 	}
     }
 }
