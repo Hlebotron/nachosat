@@ -1,3 +1,5 @@
+// Pins numbers are according to IOxyz
+
 #define SPI_MISO 			( 19 ) //BMP: SDO/SDD
 #define SPI_MOSI 			( 23 ) //BMP: SDA
 #define SPI_SCK 			( 18 ) //BMP: SCL
@@ -35,7 +37,10 @@
 
 #define RADIO_FREQ			( 868e6 )
 
-#define DEFAULT_DATA_REQUEST_INTERVAL	( 5000 MS )
+#define DEFAULT_DATA_REQUEST_INTERVAL	( 10000 MS )
 #define TICKS_TO_WAIT			( 10 )
 #define SENSOR_FAIL_THRESHOLD		( 10 )
 #define DEBUG_BAUD			( 115200 )
+#define TEST_PIN			( 33 )
+#define STREAM_BUF_LEN			( 1024 )
+#define STREAM_BUF_TRIG			( 4 )

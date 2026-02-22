@@ -25,7 +25,7 @@ int32_t read_bmp( Adafruit_Sensor* bmp_temp, Adafruit_Sensor* bmp_pressure, BMPD
 void SpiTask( void* params )
 {
     /*
-      I think H in HSPI implies Hardware and V in VSPI implies Virtual SPI
+      I think H in HSPI implies Hardware and V in VSPI implies Virtual SPI.
       In case of HSPI (probably not the case), the following pins MUST be used:
       14 (SCK)
       12 (MISO)
@@ -59,11 +59,15 @@ void SpiTask( void* params )
 
     Peripheral queue_val;
     RadioResponse resp;
+    bool is_high = false;
     
     for( ;; )
     {
 	xQueueReceive( spi_drq, &queue_val, portMAX_DELAY );
 	//TODO: If BMP remains the only SPI device outside of the SD card reader, then remove the switch case and replace the queue it with a counting semaphore
+	// digitalWrite( TEST_PIN, is_high );
+	// is_high = !is_high;
+	// Serial.printf( "Setting pin %d to %d\n", TEST_PIN, is_high );
 	switch( queue_val )
 	{
 	case PERI_BMP:

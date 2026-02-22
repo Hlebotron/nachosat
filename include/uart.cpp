@@ -90,6 +90,7 @@ int radio_init( HardwareSerial& radio_uart )
     radio_uart.write( "radio set pwr 10\r\n" ); 		delay( 5e5 );
     radio_uart.write( "radio rxstop\r\n" ); 			delay( 5e5 );
     radio_uart.write( "radio rx 0\r\n" ); 			delay( 5e5 );
+    return 0;
 }
 
 void UartTask( void* params )
