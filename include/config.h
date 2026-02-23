@@ -1,5 +1,6 @@
 // Pins numbers are according to IOxyz
 
+// SPI
 #define SPI_MISO 			( 19 ) //BMP: SDO/SDD
 #define SPI_MOSI 			( 23 ) //BMP: SDA
 #define SPI_SCK 			( 18 ) //BMP: SCL
@@ -7,6 +8,7 @@
 #define SPI_BMP_SS			( 25 ) //BMP: CSB
 #define SPI_SD_SS			( 16 )
 
+// I2C
 #define I2C_SDA				( 21 )
 #define I2C_SCL				( 22 )
 #define I2C_FREQ			( 1e5 )
@@ -16,8 +18,10 @@
 #define CHUTE_DRQ_LEN			( 64 )
 #define UART_OUT_LEN			( 64 )
 
+// BMP280
 #define BMP_RES_BITS			( 16 )
 
+// QMC5883P
 #define QMC_SINGLE_READ
 #define QMC_DECL_ANGLE			( 5.75090 )
 #define QMC_OFFSET_X			( 0.751 )
@@ -27,22 +31,27 @@
 #define QMC_SCALE_AVG			( 0.402 )
 #define QMC_ANGLE_OFFSET		( 210.0 )
 
+// Motor controller or smth idk
 #define PID_COEFF_P			( 1 )
 #define PID_COEFF_I			( 1 )
 #define PID_COEFF_D			( 1 )
 
+// UART
 #define UART_RADIO_BAUD			( 115200 )
 #define UART_RADIO_RX 			( 16 )
 #define UART_RADIO_TX 			( 17 )
 
 #define UART_SERIAL_BAUD		( 115200 )
+#define UART_SERIAL_RX 			( 3 )
+#define UART_SERIAL_TX 			( 1 )
 
+// Radio
 #define RADIO_FREQ			( 868e6 )
 
+// Miscellaneous
 #define DEFAULT_DATA_REQUEST_INTERVAL	( 10000 MS )
 #define TICKS_TO_WAIT			( 10 )
 #define SENSOR_FAIL_THRESHOLD		( 10 )
-
-#define TEST_PIN			( 33 )
+/* #define TEST_PIN			( 33 ) */
 #define STREAM_BUF_LEN			( 1024 )
 #define STREAM_BUF_TRIG			( 4 )

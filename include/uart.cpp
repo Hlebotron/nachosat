@@ -1,14 +1,28 @@
 #include "uart.h"
 
 extern QueueHandle_t uart_out_drq;
+extern TaskHandle_t uart_handle;
 extern SemaphoreHandle_t uart_in_sem;
 static QueueSetHandle_t uart_set = xQueueCreateSet( UART_OUT_LEN + 1 );
 
 void uart_irq()
 {
-    BaseType_t higher_priority_task_woken = pdFALSE;
-    xSemaphoreGiveFromISR( uart_in_sem, &higher_priority_task_woken );
-    portYIELD_FROM_ISR( higher_priority_task_woken );
+    BaseType_t higher_priority_task_woken1 = pdFALSE;
+    BaseType_t higher_priority_task_woken2 = pdFALSE;
+    // xSemaphoreGiveFromISR( uart_in_sem, &higher_priority_task_woken );
+    xTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken1 ); // Actually notify the task
+    xTaskNotifyGiveIndexedFromISR( uart_handle, 1, &higher_priority_task_woken2 ); // Notify the task about a message from the radio
+    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
+}
+
+void serial_irq()
+{
+    BaseType_t higher_priority_task_woken1 = pdFALSE;
+    BaseType_t higher_priority_task_woken2 = pdFALSE;
+    // xSemaphoreGiveFromISR( serial_in_sem, &higher_priority_task_woken );
+    xTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken1 ); // Actually notify the task
+    xTaskNotifyGiveIndexedFromISR( uart_handle, 2, &higher_priority_task_woken2 ); // Notify the task about a message from serial
+    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
 }
 
 int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )
@@ -90,63 +104,62 @@ int radio_init( HardwareSerial& radio_uart )
 
 //     }
 // }
-void UartTask( void* params )
-{
-    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
-    HardwareSerial radio_uart( 1 );
+// void UartTask( void* params )
+// {
+//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+//     attachInterrupt( digitalPinToInterrupt(UART_SERIAL_RX), serial_irq, FALLING );
+//     HardwareSerial radio_uart( 1 );
     
-    // //Create the queue set
-    // static QueueSetHandle_t queue_set = xQueueCreateSet( QUEUE_LEN + 1 ); //Length of data_response_queue + serial_sem
-    // xQueueAddToSet( serial_sem, queue_set );
-    // xQueueAddToSet( queue_from_uart, queue_set );
+//     // //Create the queue set
+//     // static QueueSetHandle_t queue_set = xQueueCreateSet( QUEUE_LEN + 1 ); //Length of data_response_queue + serial_sem
+//     // xQueueAddToSet( serial_sem, queue_set );
+//     // xQueueAddToSet( queue_from_uart, queue_set );
     
-    Serial.begin( UART_SERIAL_BAUD );
-    radio_uart.begin( UART_RADIO_BAUD );
+//     Serial.begin( UART_SERIAL_BAUD );
+//     radio_uart.begin( UART_RADIO_BAUD );
 
-    
+//     // *( (BaseType_t*) params ) = 1; //Set status of this task
 
-    *( (BaseType_t*) params ) = 1; //Set status of this task
+//     char radio_rx_buf[ STREAM_BUF_LEN ];
+//     char radio_tx_buf[ STREAM_BUF_LEN ];
 
-    char radio_rx_buf[ STREAM_BUF_LEN ];
-    char radio_tx_buf[ STREAM_BUF_LEN ];
-
-    size_t
-	read_available = 0,
-	write_available = 0,
-	write_available_tmp = 0,
-	read_count = 0,
-	write_count = 0;
-    for( ;; )
-    {
-	if( xStreamBufferReceive(stream, radio_rx_buf, sizeof(radio_rx_buf), 0) > 0 ) // Receiving data from the radio
-	{
+//     size_t
+// 	read_available = 0,
+// 	write_available = 0,
+// 	write_available_tmp = 0,
+// 	read_count = 0,
+// 	write_count = 0;
+//     for( ;; )
+//     {
+// 	if( xStreamBufferReceive(stream, radio_rx_buf, sizeof(radio_rx_buf), 0) > 0 ) // Receiving data from the radio
+// 	{
 	    
-	}
+// 	}
 	
-	read_available = Serial.available();
-	if( read_available > 0 ) // Receiving data from the laptop
-	{
-	    read_count = Serial.readBytes( radio_tx_buf, read_available );
-	    if( read_count != read_available )
-		Serial.printf( "Warning: Read %d bytes, expected %d\n", read_count, read_available );
-	    read_available = 0;
-	}
+// 	read_available = Serial.available();
+// 	if( read_available > 0 ) // Receiving data from the laptop
+// 	{
+// 	    read_count = Serial.readBytes( radio_tx_buf, read_available );
+// 	    if( read_count != read_available )
+// 		Serial.printf( "Warning: Read %d bytes, expected %d\n", read_count, read_available );
+// 	    read_available = 0;
+// 	}
 
-	// The upload code should be received 3 times to switch to upload mode (to upload code to the ESP32)
+// 	// The upload code should be received 3 times to switch to upload mode (to upload code to the ESP32)
 
-	// Why not just merge the UartTask and the SerialTask if the ground station is just a proxy?
-	// Why does the ground station require software at all? Why not just use a USB-Serial converter? Perhaps for the sake of flexibility?
-	write_available_tmp = radio_uart.availableForWrite();
-	write_available = (write_available_tmp < write_count) ? write_available_tmp : write_count;
-	if( write_available > 0 ) // Sending data to the radio
-	{
-	    size_t written = radio_uart.write( radio_tx_buf, write_available ); // Actually write
-	    if( written != write_available ) 
-		Serial.printf( "Warning: Wrote %d bytes, expected write of %d bytes\n", written, write_available );
-	    // What should be done to the buffer after it has been written from? Move all the elements to the beginning? Does UART track buffer positions?
-	}
-    }
-}
+// 	// Why not just merge the UartTask and the SerialTask if the ground station is just a proxy?
+// 	// Why does the ground station require software at all? Why not just use a USB-Serial converter? Perhaps for the sake of flexibility?
+// 	write_available_tmp = radio_uart.availableForWrite();
+// 	write_available = (write_available_tmp < write_count) ? write_available_tmp : write_count;
+// 	if( write_available > 0 ) // Sending data to the radio
+// 	{
+// 	    size_t written = radio_uart.write( radio_tx_buf, write_available ); // Actually write
+// 	    if( written != write_available ) 
+// 		Serial.printf( "Warning: Wrote %d bytes, expected write of %d bytes\n", written, write_available );
+// 	    // What should be done to the buffer after it has been written from? Move all the elements to the beginning? Does UART track buffer positions?
+// 	}
+//     }
+// }
 
 
 #else
