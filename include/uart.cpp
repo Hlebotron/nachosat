@@ -8,20 +8,19 @@ static QueueSetHandle_t uart_set = xQueueCreateSet( UART_OUT_LEN + 1 );
 
 void uart_isr()
 {
-    BaseType_t higher_priority_task_woken1 = pdFALSE;
-    BaseType_t higher_priority_task_woken2 = pdFALSE;
-    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    // xTaskNotifyFromISR( uart_handle, 1, eSetBits, &higher_priority_task_woken ); // Actually notify the task
+    vTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken ); // Actually notify the task
     // vTaskNotifyGiveIndexedFromISR( uart_handle, 2, &higher_priority_task_woken2 ); // Notify the task about a message from the radio
-    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
+    portYIELD_FROM_ISR( higher_priority_task_woken );
 }
 
 void serial_isr()
 {
-    BaseType_t higher_priority_task_woken1 = pdFALSE;
-    BaseType_t higher_priority_task_woken2 = pdFALSE;
-    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
-    vTaskNotifyGiveIndexedFromISR( uart_handle, 1, &higher_priority_task_woken2 ); // Notify the task about a message from serial
-    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    vTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken ); // Actually notify the task
+    // xTaskNotifyFromISR( uart_handle, 1, eSetBits, &higher_priority_task_woken ); // Actually notify the task
+    portYIELD_FROM_ISR( higher_priority_task_woken );
 }
 
 int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )

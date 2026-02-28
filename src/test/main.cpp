@@ -14,8 +14,8 @@
 
 TaskHandle_t uart_handle;
 
-SemaphoreHandle_t serial_sem = xSemaphoreCreateBinary();
-SemaphoreHandle_t uart_sem = xSemaphoreCreateBinary();
+// SemaphoreHandle_t serial_sem = xSemaphoreCreateCounting();
+// SemaphoreHandle_t uart_sem = xSemaphoreCreateCounting();
 
 // StreamBufferHandle_t stream = xStreamBufferCreate( STREAM_BUF_LEN, STREAM_BUF_TRIG );
 
@@ -51,8 +51,9 @@ void UartTask( void* params )
     char radio_tx_buf[ STREAM_BUF_LEN ];
 
     size_t
-	uart_read_available = 0,
-	serial_read_available = 0,
+	// available = 0,
+	// uart_read_available = 0,
+	// serial_read_available = 0,
 	// write_available = 0,
 	// write_available_tmp = 0,
 	read_count = 0,
@@ -60,12 +61,30 @@ void UartTask( void* params )
     Serial.println( "Starting" );
     for( ;; )
     {
-	Serial.printf( "Entries: %d", configTASK_NOTIFICATION_ARRAY_ENTRIES);
-	ulTaskNotifyTakeIndexed( 0, pdTRUE, portMAX_DELAY ); // Get notified about either the radio or serial
-	// Serial.println( "Helo" );
-	serial_read_available = ulTaskNotifyTakeIndexed( 1, pdTRUE, portMAX_DELAY ); // UART
-	uart_read_available = ulTaskNotifyTakeIndexed( 2, pdTRUE, portMAX_DELAY ); // Serial
-	Serial.printf( "Serial available: %d, radio available: %d\n", serial_read_available, uart_read_available );
+	// Serial.printf( "Entries: %d", configTASK_NOTIFICATION_ARRAY_ENTRIES);
+	read_count = ulTaskNotifyTake( pdTRUE, portMAX_DELAY ); // Get notified about either the radio or serial
+	Serial.printf( "Notify count: %d\n", read_count );
+
+	if( radio_uart.available() )
+	{
+	    Serial.print( "UART data available: " );
+	    while( radio_uart.available() )
+	    {
+		Serial.printf( "%c", radio_uart.read() );
+	    }
+	    Serial.println();
+	}
+
+	if( Serial.available() ) // Serial
+	{
+	    Serial.print( "Serial data available: " );
+	    while( Serial.available() )
+	    {
+		Serial.printf( "%c", Serial.read() );
+	    }
+	    Serial.println();
+	}
+	vTaskDelay( 3 );
     }
 }
 
