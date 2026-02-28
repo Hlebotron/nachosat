@@ -50,22 +50,14 @@ void UartTask( void* params )
     char radio_rx_buf[ STREAM_BUF_LEN ];
     char radio_tx_buf[ STREAM_BUF_LEN ];
 
-    size_t
-	uart_read_available = 0,
-	serial_read_available = 0,
-	// write_available = 0,
-	// write_available_tmp = 0,
-	read_count = 0,
-	write_count = 0;
     Serial.println( "Starting" );
     for( ;; )
     {
-	Serial.printf( "Entries: %d", configTASK_NOTIFICATION_ARRAY_ENTRIES);
-	ulTaskNotifyTakeIndexed( 0, pdTRUE, portMAX_DELAY ); // Get notified about either the radio or serial
-	// Serial.println( "Helo" );
-	serial_read_available = ulTaskNotifyTakeIndexed( 1, pdTRUE, portMAX_DELAY ); // UART
-	uart_read_available = ulTaskNotifyTakeIndexed( 2, pdTRUE, portMAX_DELAY ); // Serial
-	Serial.printf( "Serial available: %d, radio available: %d\n", serial_read_available, uart_read_available );
+	uint32_t bits = 0;
+	xTaskNotifyWait( 0, ULONG_MAX, &bits, portMAX_DELAY );
+	Serial.printf( "Radio: %s, Serial: %s\n",
+	    (bits & BIT_RADIO)  ? "yes" : "no",
+	    (bits & BIT_SERIAL) ? "yes" : "no" );
     }
 }
 
