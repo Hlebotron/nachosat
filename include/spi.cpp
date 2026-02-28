@@ -92,7 +92,10 @@ void SpiTask( void* params )
 	    
 	    resp.sensor = PERI_BMP;
 	    resp.data.bmp = { data.temp, data.pressure };
+	    
 	    xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+	    xTaskNotifyGive( uart_handle );
+	    
 	    Serial.printf( "\nTemp: %f\n", data.temp );
 	    Serial.printf( "Pressure: %f\n", data.pressure );
 	    }

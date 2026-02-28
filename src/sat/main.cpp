@@ -7,7 +7,9 @@
 QueueHandle_t spi_drq = xQueueCreate( SPI_DRQ_LEN, sizeof(Peripheral) );
 QueueHandle_t i2c_drq = xQueueCreate( I2C_DRQ_LEN, sizeof(Peripheral) );
 QueueHandle_t uart_out_drq = xQueueCreate( UART_OUT_LEN, sizeof(RadioResponse) );
-SemaphoreHandle_t uart_in_sem = xSemaphoreCreateBinary();
+// SemaphoreHandle_t uart_in_sem = xSemaphoreCreateBinary();
+
+TaskHandle_t uart_handle;
 
 /* Corresponds to:
    BMP280
@@ -65,7 +67,7 @@ void setup()
     int *spi_param, *i2c_param, *chute_param, *clock_param, *uart_param;
     xTaskCreatePinnedToCore( SpiTask, "SpiTask", 10000, spi_param, 1, NULL, 0 );
     // xTaskCreatePinnedToCore( I2CTask, "I2CTask", 10000, i2c_param, 1, NULL, 0 );
-    // xTaskCreatePinnedToCore( UartTask, "UartTask", 10000, uart_param, 1, NULL, 0 );
+    xTaskCreatePinnedToCore( UartTask, "UartTask", 10000, uart_param, 1, &uart_handle, 0 );
     // xTaskCreatePinnedToCore( ParachuteTask, "ParachuteTask", 10000, chute_param, 2, NULL, 1 );
     for( int i = 0; i < NUM_SOURCES; i++ )
 	xTimerStart( timers[i], 100 );
