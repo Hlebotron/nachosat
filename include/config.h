@@ -37,8 +37,8 @@
 #define PID_COEFF_D			( 1 )
 
 // UART
-#define BIT_RADIO   ( 1 << 0 )
-#define BIT_SERIAL  ( 1 << 1 )
+#define BIT_RADIO   ( 0x0000FFFF )
+#define BIT_SERIAL  ( 0xFFFF0000 )
 
 #define UART_RADIO_BAUD			( 115200 )
 #define UART_RADIO_RX 			( 16 )

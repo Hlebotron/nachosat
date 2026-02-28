@@ -55,9 +55,9 @@ void UartTask( void* params )
     {
 	uint32_t bits = 0;
 	xTaskNotifyWait( 0, ULONG_MAX, &bits, portMAX_DELAY );
-	Serial.printf( "Radio: %s, Serial: %s\n",
-	    (bits & BIT_RADIO)  ? "yes" : "no",
-	    (bits & BIT_SERIAL) ? "yes" : "no" );
+	Serial.printf( "Radio: %u, Serial: %u\n",
+	    (uint16_t)( bits & BIT_RADIO ),
+	    (uint16_t)( (bits & BIT_SERIAL) >> 16 ) );
     }
 }
 
