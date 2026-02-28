@@ -5,29 +5,23 @@ extern QueueHandle_t uart_out_drq;
 extern TaskHandle_t uart_handle;
 extern SemaphoreHandle_t uart_in_sem;
 static QueueSetHandle_t uart_set = xQueueCreateSet( UART_OUT_LEN + 1 );
-static volatile uint32_t isr_counts = 0;
-static portMUX_TYPE isr_mux = portMUX_INITIALIZER_UNLOCKED;
 
 void uart_isr()
 {
-    static uint16_t count = 0;
-    portENTER_CRITICAL_ISR( &isr_mux );
-    isr_counts = ( isr_counts & 0xFFFF0000 ) | ( ++count );
-    portEXIT_CRITICAL_ISR( &isr_mux );
-    BaseType_t woken = pdFALSE;
-    xTaskNotifyFromISR( uart_handle, isr_counts, eSetValueWithOverwrite, &woken );
-    portYIELD_FROM_ISR( woken );
+    BaseType_t higher_priority_task_woken1 = pdFALSE;
+    BaseType_t higher_priority_task_woken2 = pdFALSE;
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
+    // vTaskNotifyGiveIndexedFromISR( uart_handle, 2, &higher_priority_task_woken2 ); // Notify the task about a message from the radio
+    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
 }
 
 void serial_isr()
 {
-    static uint16_t count = 0;
-    portENTER_CRITICAL_ISR( &isr_mux );
-    isr_counts = ( isr_counts & 0x0000FFFF ) | ( (uint32_t)(++count) << 16 );
-    portEXIT_CRITICAL_ISR( &isr_mux );
-    BaseType_t woken = pdFALSE;
-    xTaskNotifyFromISR( uart_handle, isr_counts, eSetValueWithOverwrite, &woken );
-    portYIELD_FROM_ISR( woken );
+    BaseType_t higher_priority_task_woken1 = pdFALSE;
+    BaseType_t higher_priority_task_woken2 = pdFALSE;
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 1, &higher_priority_task_woken2 ); // Notify the task about a message from serial
+    portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
 }
 
 int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )
