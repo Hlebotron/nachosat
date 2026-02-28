@@ -1,3 +1,4 @@
+// #include "task.h"
 #include "uart.h"
 
 extern QueueHandle_t uart_out_drq;
@@ -5,23 +6,21 @@ extern TaskHandle_t uart_handle;
 extern SemaphoreHandle_t uart_in_sem;
 static QueueSetHandle_t uart_set = xQueueCreateSet( UART_OUT_LEN + 1 );
 
-void uart_irq()
+void uart_isr()
 {
     BaseType_t higher_priority_task_woken1 = pdFALSE;
     BaseType_t higher_priority_task_woken2 = pdFALSE;
-    // xSemaphoreGiveFromISR( uart_in_sem, &higher_priority_task_woken );
-    xTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken1 ); // Actually notify the task
-    xTaskNotifyGiveIndexedFromISR( uart_handle, 1, &higher_priority_task_woken2 ); // Notify the task about a message from the radio
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
+    // vTaskNotifyGiveIndexedFromISR( uart_handle, 2, &higher_priority_task_woken2 ); // Notify the task about a message from the radio
     portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
 }
 
-void serial_irq()
+void serial_isr()
 {
     BaseType_t higher_priority_task_woken1 = pdFALSE;
     BaseType_t higher_priority_task_woken2 = pdFALSE;
-    // xSemaphoreGiveFromISR( serial_in_sem, &higher_priority_task_woken );
-    xTaskNotifyGiveFromISR( uart_handle, &higher_priority_task_woken1 ); // Actually notify the task
-    xTaskNotifyGiveIndexedFromISR( uart_handle, 2, &higher_priority_task_woken2 ); // Notify the task about a message from serial
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 0, &higher_priority_task_woken1 ); // Actually notify the task
+    vTaskNotifyGiveIndexedFromISR( uart_handle, 1, &higher_priority_task_woken2 ); // Notify the task about a message from serial
     portYIELD_FROM_ISR( higher_priority_task_woken1 || higher_priority_task_woken2 );
 }
 
@@ -62,7 +61,7 @@ int write_radio( HardwareSerial& radio_uart, const RadioResponse* resp )
 int radio_init( HardwareSerial& radio_uart )
 {
     radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
-    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+    attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_isr, FALLING );
 
     radio_uart.write( "radio rxstop\r\n" ); 			delay( 5e5 );
     radio_uart.write( "radio set freq" );
@@ -82,7 +81,7 @@ int radio_init( HardwareSerial& radio_uart )
 
 // void UartTask( void* params )
 // {
-//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
+//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_isr, FALLING );
 //     HardwareSerial radio_uart( 1 );
 
 //     radio_uart.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX );
@@ -106,8 +105,8 @@ int radio_init( HardwareSerial& radio_uart )
 // }
 // void UartTask( void* params )
 // {
-//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_irq, FALLING );
-//     attachInterrupt( digitalPinToInterrupt(UART_SERIAL_RX), serial_irq, FALLING );
+//     attachInterrupt( digitalPinToInterrupt(UART_RADIO_RX), uart_isr, FALLING );
+//     attachInterrupt( digitalPinToInterrupt(UART_SERIAL_RX), serial_isr, FALLING );
 //     HardwareSerial radio_uart( 1 );
     
 //     // //Create the queue set
