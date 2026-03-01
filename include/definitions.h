@@ -27,7 +27,10 @@ enum Peripheral
     
 /* }; */
 
-struct GPSData		{ float x, y; };
+typedef Orient float;
+struct 
+
+struct GPSData		{ float lon, lat; }; // lon < 0 means south, lat < 0 means east 
 struct MagnetoData	{ float x, y, z, head; };
 struct BMPData		{ float temp, pressure; };
 struct AccelData 	{ float x, y, z, roll, pitch; };
@@ -101,7 +104,7 @@ enum i2c_error
 #define I2C_BMI_ADDR			( 0x69 )
 #define I2C_QMC_ADDR			( 0x2C )
 
-#define MS				/ portTICK_PERIOD_MS
+#define MS				/ portTICK_PERIOD_MS // Convert from ticks to millis
 
 /* typedef struct { */
 /*     int16_t x; */

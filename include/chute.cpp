@@ -39,7 +39,7 @@ float pid_d( float sp, float pv )
     }
 
 
-    float res = ( current_err - prev_err ) / ( current_time - prev_time );
+    float res = ( current_err - prev_err ) / ( ( current_time - prev_time ) MS * 1000 );
   
     prev_err = current_err;
     prev_time = current_time;
@@ -48,8 +48,9 @@ float pid_d( float sp, float pv )
     return res;
 }
 
-float pid( float sp, float pv )
+Orient pid( GPSData sp, GPSData pv, Orient orient )
 {
+    
     return ( PID_COEFF_P * pid_p( sp, pv ) + PID_COEFF_I * pid_i( sp, pv ) + PID_COEFF_D * pid_d( sp, pv ) );
 }
 
