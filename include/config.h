@@ -27,9 +27,9 @@
 #define QMC_ANGLE_OFFSET		( 210.0 )
 
 // Motor controller or smth idk
-#define PID_COEFF_P			( 1 )
-#define PID_COEFF_I			( 1 )
-#define PID_COEFF_D			( 1 )
+#define PID_COEFF_P			( 1.0 )
+#define PID_COEFF_I			( 0.0 )
+#define PID_COEFF_D			( 1.0 )
 
 // UART
 #define UART_RADIO_BAUD			( 115200 )
