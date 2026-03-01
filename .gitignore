@@ -1,0 +1,4 @@
+/.pio/
+*#
+*.~undo-tree~
+/src/main.cpp

@@ -339,10 +339,10 @@ void I2CTask( void* params )
 		resp.data.magneto = magneto;
 		xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
 		    
-		Serial.printf( "Magneto x: %i\n", xyz[0] );
-		Serial.printf( "Magneto y: %i\n", xyz[1] );
-		Serial.printf( "Magneto z: %i\n", xyz[2] );
-		Serial.printf( "Magneto head: %i\n", magneto.head );
+		Serial.printf( "Magneto x: %f\n", xyz[0] );
+		Serial.printf( "Magneto y: %f\n", xyz[1] );
+		Serial.printf( "Magneto z: %f\n", xyz[2] );
+		Serial.printf( "Magneto head: %f\n", magneto.head );
 	    }
 	    else
 	    {
@@ -408,6 +408,7 @@ void I2CTask( void* params )
 		resp.sensor = PERI_GYRO;
 		resp.data.gyro = gyro;
 		xQueueSendToBack( uart_out_drq, &resp, TICKS_TO_WAIT );
+		xTaskNotifyGive( uart_handle );
 		
 	        Serial.printf( "gyro_x: %f\n", gyro.x );
 	        Serial.printf( "gyro_y: %f\n", gyro.y );
