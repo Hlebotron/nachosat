@@ -1,3 +1,8 @@
+#ifndef DEFINITIONS_H
+#define DEFINITIONS_H
+
+#include <stdint.h>
+
 #define NUM_SOURCES	( 3 )
 
 enum Interface
@@ -27,10 +32,10 @@ enum Peripheral
     
 /* }; */
 
-typedef Orient float;
-struct 
+typedef float Orient;
+struct Line		{ float A, B, x_0, y_0; };
 
-struct GPSData		{ float lon, lat; }; // lon < 0 means south, lat < 0 means east 
+struct GPSData		{ float lon, lat; }; // lon < 0 means west, lat < 0 means south 
 struct MagnetoData	{ float x, y, z, head; };
 struct BMPData		{ float temp, pressure; };
 struct AccelData 	{ float x, y, z, roll, pitch; };
@@ -144,3 +149,5 @@ enum i2c_error
 /* void IRAM_ATTR hmc5883l_drdy_isr(); */
 
 /* #endif */
+
+#endif // DEFINITIONS_H

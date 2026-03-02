@@ -26,10 +26,11 @@
 #define QMC_SCALE_AVG			( 0.402 )
 #define QMC_ANGLE_OFFSET		( 210.0 )
 
-// Motor controller or smth idk
-#define PID_COEFF_P			( 1.0 )
-#define PID_COEFF_I			( 0.0 )
-#define PID_COEFF_D			( 1.0 )
+// Guidance control
+#define PN_GAIN				( 3.0 )   // Proportional navigation gain (typically 3-5)
+#define STEERING_GAIN			( 0.5 )   // Scales heading error to motor output
+#define MOTOR_DEADBAND			( 10.0 )  // Ignore heading errors below this (degrees)
+#define MOTOR_MAX_PWM			( 255 )   // Max PWM value for motor
 
 // UART
 #define UART_RADIO_BAUD			( 115200 )
