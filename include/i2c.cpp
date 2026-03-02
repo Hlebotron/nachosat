@@ -5,7 +5,7 @@
 // extern SemaphoreHandle_t received_sem = xSemaphoreCreateBinary();
 // extern QueueHandle_t i2c_drq;
 
-static uint8_t sensor_fails[] = { 0, 0 }; //BMI160, QMC
+static uint8_t sensor_fails[] = { 0, 0, 0 }; // BMI160, QMC, GPS
 
 int bmi160_read8( uint8_t reg, uint8_t& out )
 {
@@ -268,6 +268,117 @@ int read_bmi160_gyro( GyroData& gyro )
 //     return 0;
 // }
 
+// ========================= GPS (MAX-M8Q) =========================
+
+// Read available bytes from GPS DDC stream
+static int gps_read_available()
+{
+    Wire.beginTransmission(I2C_GPS_ADDR);
+    Wire.write(0xFD);  // Register for bytes available (high byte)
+    if (Wire.endTransmission(false) != 0) return -1;
+    if (Wire.requestFrom(I2C_GPS_ADDR, 2) != 2) return -2;
+    uint16_t available = (Wire.read() << 8) | Wire.read();
+    return available;
+}
+
+// Read bytes from GPS DDC data stream
+static int gps_read_bytes(uint8_t* buf, size_t len)
+{
+    Wire.beginTransmission(I2C_GPS_ADDR);
+    Wire.write(0xFF);  // Data stream register
+    if (Wire.endTransmission(false) != 0) return -1;
+
+    size_t received = Wire.requestFrom(I2C_GPS_ADDR, len);
+    if (received != len) return -2;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        buf[i] = Wire.read();
+    }
+    return 0;
+}
+
+// Calculate UBX checksum (Fletcher's algorithm)
+static void ubx_checksum(const uint8_t* data, size_t len, uint8_t* ck_a, uint8_t* ck_b)
+{
+    *ck_a = 0;
+    *ck_b = 0;
+    for (size_t i = 0; i < len; i++)
+    {
+        *ck_a += data[i];
+        *ck_b += *ck_a;
+    }
+}
+
+// Read GPS position from UBX-NAV-PVT message
+// Returns 0 on success, negative on error, positive if no valid fix
+int read_gps(GPSData& gps)
+{
+    // Check if data is available
+    int available = gps_read_available();
+    if (available < 0) return available;
+    if (available < 100) return 1;  // Not enough for a full NAV-PVT message
+
+    // Buffer for UBX-NAV-PVT: sync(2) + class(1) + id(1) + len(2) + payload(92) + cksum(2) = 100 bytes
+    uint8_t buf[100];
+
+    // Search for UBX sync bytes in available data
+    bool found = false;
+    for (int attempts = 0; attempts < available && !found; attempts++)
+    {
+        uint8_t byte;
+        if (gps_read_bytes(&byte, 1) != 0) return -3;
+
+        if (byte == UBX_SYNC_1)
+        {
+            buf[0] = byte;
+            if (gps_read_bytes(&buf[1], 1) != 0) return -4;
+
+            if (buf[1] == UBX_SYNC_2)
+            {
+                // Read rest of header (class, id, length)
+                if (gps_read_bytes(&buf[2], 4) != 0) return -5;
+
+                uint8_t msg_class = buf[2];
+                uint8_t msg_id = buf[3];
+                uint16_t payload_len = buf[4] | (buf[5] << 8);
+
+                // Check if this is NAV-PVT
+                if (msg_class == UBX_NAV_CLASS && msg_id == UBX_NAV_PVT_ID && payload_len == UBX_NAV_PVT_LEN)
+                {
+                    // Read payload + checksum
+                    if (gps_read_bytes(&buf[6], payload_len + 2) != 0) return -6;
+                    found = true;
+                }
+            }
+        }
+    }
+
+    if (!found) return 2;  // No NAV-PVT message found
+
+    // Verify checksum (covers class, id, length, payload)
+    uint8_t ck_a, ck_b;
+    ubx_checksum(&buf[2], 4 + UBX_NAV_PVT_LEN, &ck_a, &ck_b);
+    if (ck_a != buf[98] || ck_b != buf[99]) return 3;  // Checksum mismatch
+
+    // Check fix type (offset 20 in payload, which is buf[26])
+    uint8_t fix_type = buf[26];
+    if (fix_type < 2) return 4;  // No fix (0=none, 1=dead reckoning only)
+
+    // Extract lon/lat from payload
+    // Payload starts at buf[6]
+    // lon @ offset 24 in payload = buf[6+24] = buf[30]
+    // lat @ offset 28 in payload = buf[6+28] = buf[34]
+    int32_t lon_raw = buf[30] | (buf[31] << 8) | (buf[32] << 16) | (buf[33] << 24);
+    int32_t lat_raw = buf[34] | (buf[35] << 8) | (buf[36] << 16) | (buf[37] << 24);
+
+    // Convert from 1e-7 degrees to float degrees
+    gps.lon = lon_raw / 10000000.0f;
+    gps.lat = lat_raw / 10000000.0f;
+
+    return 0;
+}
+
 void I2CTask( void* params )
 {
     // Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
@@ -308,6 +419,7 @@ void I2CTask( void* params )
     AccelData accel;
     GyroData gyro;
     MagnetoData magneto;
+    GPSData gps;
     int status;
     float xyz[3];
     float heading;
@@ -427,6 +539,33 @@ void I2CTask( void* params )
 	    }
 	
 
+	    break;
+
+	case PERI_GPS:
+	    if (sensor_fails[2] < SENSOR_FAIL_THRESHOLD)
+	    {
+		status = read_gps(gps);
+		if (status < 0)
+		{
+		    Serial.printf("Failed to read GPS, code: %d\n", status);
+		    sensor_fails[2] += 1;
+		    if (sensor_fails[2] >= SENSOR_FAIL_THRESHOLD)
+			Serial.println("GPS reached the sensor fail threshold");
+		}
+		else if (status > 0)
+		{
+		    Serial.printf("GPS: no valid data (code %d)\n", status);
+		}
+		else
+		{
+		    resp.sensor = PERI_GPS;
+		    resp.data.gps = gps;
+		    xQueueSendToBack(uart_out_drq, &resp, TICKS_TO_WAIT);
+
+		    Serial.printf("GPS lat: %f\n", gps.lat);
+		    Serial.printf("GPS lon: %f\n", gps.lon);
+		}
+	    }
 	    break;
 	}
     }

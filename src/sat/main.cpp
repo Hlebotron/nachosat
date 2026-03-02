@@ -23,6 +23,7 @@ TimerHandle_t timers[ NUM_SOURCES ];
 #include "i2c.cpp"
 #include "spi.cpp"
 #include "chute.cpp"
+#include "packet.cpp"
 // #include "data_clock.cpp"
 #include "uart.cpp"
 

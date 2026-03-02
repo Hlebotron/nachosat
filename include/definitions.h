@@ -111,6 +111,14 @@ enum i2c_error
 /* #define I2C_BMP_ADDR			( 0x76 ) */
 #define I2C_BMI_ADDR			( 0x69 )
 #define I2C_QMC_ADDR			( 0x2C )
+#define I2C_GPS_ADDR			( 0x42 )
+
+// UBX protocol constants
+#define UBX_SYNC_1			( 0xB5 )
+#define UBX_SYNC_2			( 0x62 )
+#define UBX_NAV_CLASS			( 0x01 )
+#define UBX_NAV_PVT_ID			( 0x07 )
+#define UBX_NAV_PVT_LEN			( 92 )
 
 #define MS				/ portTICK_PERIOD_MS // Convert from ticks to millis
 
