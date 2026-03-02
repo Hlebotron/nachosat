@@ -13,17 +13,20 @@ enum Interface
     IF_UART
 };
 
-enum Peripheral
+enum Peripheral : uint8_t
 {
-    //I2C devices
-    PERI_ACCEL,	
-    PERI_GYRO,
-    PERI_GPS,
-    PERI_MAGNETO,
-    
-    //SPI devices
-    PERI_BMP,
-    PERI_SD
+    // I2C devices
+    PERI_GPS     = 0x01,
+    PERI_ACCEL   = 0x02,
+    PERI_GYRO    = 0x03,
+    PERI_MAGNETO = 0x04,
+
+    // SPI devices
+    PERI_BMP     = 0x05,
+    PERI_SD      = 0x06,
+
+    // Status
+    PERI_STATUS  = 0x07
 };
 
 /* //Comes from ground station */

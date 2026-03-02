@@ -2,6 +2,7 @@ extern TaskHandle_t uart_handle;
 
 #ifndef GROUND
 extern QueueHandle_t uart_out_drq;
+#include "packet.h"
 #endif
 
 void uart_isr()
@@ -13,37 +14,50 @@ void uart_isr()
     portYIELD_FROM_ISR( higher_priority_task_woken );
 }
 
+// Get data size for each peripheral type
+static uint8_t get_data_size(Peripheral peri)
+{
+    switch (peri)
+    {
+    case PERI_GPS:     return sizeof(GPSData);
+    case PERI_ACCEL:   return sizeof(AccelData);
+    case PERI_GYRO:    return sizeof(GyroData);
+    case PERI_MAGNETO: return sizeof(MagnetoData);
+    case PERI_BMP:     return sizeof(BMPData);
+    default:           return 0;
+    }
+}
+
 int write_radio( HardwareSerial& Radio, const RadioResponse* resp )
 {
-    static size_t written = 0;
-    if( resp == NULL )
-	return 2;
-    
-    switch( resp->sensor )
+    if (resp == NULL)
+        return 2;
+
+    uint8_t data_size = get_data_size(resp->sensor);
+    if (data_size == 0)
     {
-    case PERI_ACCEL:
-	written = Radio.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(AccelData)) );
-	break;
-    case PERI_GYRO:
-	written = Radio.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(GyroData)) );
-	break;
-    case PERI_GPS:
-	written = Radio.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(GPSData)) );
-	break;
-    case PERI_MAGNETO:
-	written = Radio.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(MagnetoData)) );
-	break;
-    case PERI_BMP:
-	written = Radio.write( (uint8_t*) resp, (sizeof(Peripheral) + sizeof(BMPData)) );
-	break;
-    default:
-	Serial.printf( "Invalid sensor, code: %i\n", resp->sensor );
-	return 1;
+        Serial.printf("Invalid sensor, code: %i\n", resp->sensor);
+        return 1;
     }
-    
-    if( written == 0 )
-	return 3;
-    
+
+    // Buffer for serialized packet (max size: header + largest data + CRC)
+    static uint8_t packet_buf[PACKET_HEADER_SIZE + sizeof(AccelData) + PACKET_CRC_SIZE];
+
+    uint32_t ticks = xTaskGetTickCount();
+
+    size_t packet_size = serialize_packet(
+        packet_buf, sizeof(packet_buf),
+        resp->sensor, ticks,
+        (const uint8_t*)&resp->data, data_size
+    );
+
+    if (packet_size == 0)
+        return 4;
+
+    size_t written = Radio.write(packet_buf, packet_size);
+    if (written == 0)
+        return 3;
+
     return 0;
 }
 

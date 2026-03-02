@@ -50,6 +50,10 @@
 // Radio
 #define RADIO_FREQ			( 868e6 )
 
+#define PACKET_SYNC_BYTE    0xAA
+#define PACKET_HEADER_SIZE  7   // sync(1) + type(1) + ticks(4) + len(1)
+#define PACKET_CRC_SIZE     4
+
 // Miscellaneous
 #define PRINT_TO_SERIAL			( false )
 
@@ -61,6 +65,7 @@
 #define DEFAULT_DATA_REQUEST_INTERVAL	( 10000 MS )
 #define TICKS_TO_WAIT			( 10 )
 #define SENSOR_FAIL_THRESHOLD		( 10 )
+
 /* #define TEST_PIN			( 33 ) */
 /* #define STREAM_BUF_LEN			( 1024 ) */
 /* #define STREAM_BUF_TRIG			( 4 ) */
