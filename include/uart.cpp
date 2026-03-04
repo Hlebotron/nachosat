@@ -91,7 +91,7 @@ void UartTask( void* params )
     Serial.begin( UART_SERIAL_BAUD );
     Radio.begin( UART_RADIO_BAUD, SERIAL_8N1, UART_RADIO_RX, UART_RADIO_TX, UART_RADIO_INVERT, UART_RADIO_TIMEOUT_MS, UART_RADIO_RXFIFO_FULL_THRHD_MS );
 
-    Serial.println( "Starting" );
+    Serial.println( "Started UART" );
     for( ;; )
     {
 	ulTaskNotifyTake( pdTRUE, portMAX_DELAY ); // Get notified about either the radio or serial

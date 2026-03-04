@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#define NUM_SOURCES	( 3 )
+// Number of sensors to read from
+#define NUM_SOURCES	( 4 )
 
 enum Interface
 {
@@ -13,6 +14,7 @@ enum Interface
     IF_UART
 };
 
+// List of all peripherals
 enum Peripheral : uint8_t
 {
     // I2C devices
@@ -61,6 +63,7 @@ struct RadioResponse
     union PeriData	data;
 };
 
+// Originates from the Arduino library Wire
 enum i2c_error
 {
     I2C_OK = 0,

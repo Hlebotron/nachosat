@@ -5,7 +5,7 @@
 // extern SemaphoreHandle_t received_sem = xSemaphoreCreateBinary();
 // extern QueueHandle_t i2c_drq;
 
-static uint8_t sensor_fails[] = { 0, 0, 0 }; // BMI160, QMC, GPS
+static uint8_t sensor_fails[ NUM_SOURCES ]; // = { 0, 0, 0 }; // BMI160, QMC, GPS
 
 int bmi160_read8( uint8_t reg, uint8_t& out )
 {
@@ -164,110 +164,6 @@ int read_bmi160_gyro( GyroData& gyro )
     return 0;
 }
 
-// int magneto_init()
-// {
-//     int res;
-//     //According to documentation:
-//     //8-average, 15 Hz default, normal measurement
-//     res = write_reg2(
-// 	I2C_QMC_ADDR,
-// 	QMC_SIGN_REG_ADDR,
-// 	QMC_SIGN_REG_VALUE,
-// 	true );
-//     if( res != 0 ) return res;
-
-//     res = write_reg2(
-// 	I2C_QMC_ADDR,
-// 	QMC_RS_REG_ADDR,
-// 	QMC_RS_REG_VALUE,
-// 	true );
-//     if( res != 0 ) return res;
-
-
-// #ifndef MAGNETO_SINGLE
-//     //Continuous-measurement mode
-//     res = write_reg2(
-// 	I2C_QMC_ADDR,
-// 	QMC_MODE_REG_ADDR,
-// 	QMC_MODE_REG_VALUE,
-// 	true );
-//     if( res != 0 ) return res;
-
-//     //Options:
-//     //1. Wait 6ms
-//     //2. Monitor status register (poll if I understand correctly)
-//     //3. Use DRDY hardware interrupt pin
-//     //Eventually it will be option 3, but for now it's option 1
-//     delay( 6 MS );
-// #endif
-    
-//     return 0;
-// }
-
-// int read_magneto( QMC5883P& qmc, MagnetoData& magneto )
-// {
-//     int res;
-// #ifdef QMC_SINGLE_READ
-//     // res = write_reg2( I2C_QMC_ADDR, QMC_MODE_REG_ADDR, QMC_MODE_REG_VALUE, true );
-//     // if( res != 0 ) return res;
-//     // // write_reg2(	I2C_QMC_ADDR, QMC_MODE_REG_ADDR,	QMC_MODE_REG_VALUE, true );
-
-//     // //Switch to option 3
-//     // delay( 6 MS );
-
-//     // res = write_reg1( I2C_QMC_ADDR, 0x02, false );
-//     // if( res != 0 ) return res;
-//     // res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
-//     // if( res <= 0 ) return -3;
-
-//     //Read values
-//     // {
-//     // 	uint8_t val = 0;
-// 	// for( int i = 1; i <= 6; i++ )
-// 	// {
-// 	//     if( i % 2 == 1 )
-// 	//     {
-// 	// 	val = Wire.read();
-// 	// 	continue;
-// 	//     }
-
-// 	//     switch( i / 2 )
-// 	//     {
-// 	//     case 1:
-// 	// 	magneto.x = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_X;
-// 	// 	break;
-// 	//     case 2:
-// 	// 	magneto.z = ( Wire.read() << 8 ) | val;
-// 	// 	break;
-// 	//     case 3:
-// 	// 	magneto.y = ( (Wire.read() << 8) | val ) * QMC_SCALE_AVG / QMC_SCALE_Y;
-// 	// 	break;
-// 	//     }
-// 	// }
-// 	res = qmc.readXYZ( QMC_DECL_ANGLE );
-// 	if( !res ) return -3;
-// 	magneto.x = xyz[0];
-// 	magneto.y = xyz[1];
-// 	magneto.z = xyz[2];
-// 	magneto.head = fmod( qmc.getHeadingDeg(QMC_DECL_ANGLE) + QMC_ANGLE_OFFSET, 360.0 );
-//     // }
-    
-// #else
-//     res = write_reg1( I2C_QMC_ADDR, 0x06, false );
-//     if( res != 0 ) return res;
-//     res = Wire.requestFrom( I2C_QMC_ADDR, 6 );
-//     if( res != 0 ) return -1;
-
-//     //Read values
-    
-
-//     res = write_reg1( I2C_QMC_ADDR, 0x03, true );
-//     if( res != 0 ) return res;
-// #endif
-    
-//     return 0;
-// }
-
 // ========================= GPS (MAX-M8Q) =========================
 
 // Read available bytes from GPS DDC stream
@@ -382,6 +278,9 @@ int read_gps(GPSData& gps)
 void I2CTask( void* params )
 {
     // Wire.begin( I2C_SDA, I2C_SCL, I2C_FREQ );
+    memset( sensor_fails, 0, NUM_SOURCES );
+
+  
     Wire.begin();
     delay( 200 );
 

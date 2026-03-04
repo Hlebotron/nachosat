@@ -53,6 +53,10 @@ void TimerCallback( TimerHandle_t timer )
 	sensor = PERI_MAGNETO;
 	xQueueSendToBack( i2c_drq, &sensor, 0 );
 	break;
+    case 3:
+	sensor = PERI_GPS;
+	xQueueSendToBack( i2c_drq, &sensor, 0 );
+	break;
     }
 }
 
